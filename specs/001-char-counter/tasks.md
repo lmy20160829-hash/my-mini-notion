@@ -29,9 +29,9 @@ description: "Task list for 내용 글자 수 카운터 (Content Character Count
 
 **Purpose**: 착수 전 준비 — 테스트 스택 정상 동작 확인 및 필수 문서 선독(헌법 III·IV, AGENTS.md).
 
-- [ ] T001 기존 테스트 러너 baseline 확인: `npm test`(=`vitest run`, 설정 `vitest.config.mts`) 실행 후 `__tests__/setup.smoke.test.tsx`가 통과(green)하는지 확인 — 신규 의존성 설치 불필요
-- [ ] T002 [P] 코드 작성 전에 번들 Next.js 가이드 `node_modules/next/dist/docs/**/testing/vitest.md`(및 client component 가이드)를 읽는다 — AGENTS.md/헌법 IV(프레임워크 문서 우선)
-- [ ] T003 [P] 칩 스타일 토큰을 위해 `DESIGN.md`(§2.7 컴포넌트, §4.3 글 상세, §6.4 콘텐츠)를 읽는다 — CLAUDE.md 디자인 규칙/헌법 III(디자인 시스템 준수)
+- [X] T001 기존 테스트 러너 baseline 확인: `npm test`(=`vitest run`, 설정 `vitest.config.mts`) 실행 후 `__tests__/setup.smoke.test.tsx`가 통과(green)하는지 확인 — 신규 의존성 설치 불필요
+- [X] T002 [P] 코드 작성 전에 번들 Next.js 가이드 `node_modules/next/dist/docs/**/testing/vitest.md`(및 client component 가이드)를 읽는다 — AGENTS.md/헌법 IV(프레임워크 문서 우선)
+- [X] T003 [P] 칩 스타일 토큰을 위해 `DESIGN.md`(§2.7 컴포넌트, §4.3 글 상세, §6.4 콘텐츠)를 읽는다 — CLAUDE.md 디자인 규칙/헌법 III(디자인 시스템 준수)
 
 ---
 
