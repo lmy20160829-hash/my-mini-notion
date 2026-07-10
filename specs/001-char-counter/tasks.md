@@ -41,8 +41,8 @@ description: "Task list for 내용 글자 수 카운터 (Content Character Count
 
 **⚠️ CRITICAL**: 이 단계 완료 전에는 어떤 user story도 시작할 수 없다.
 
-- [ ] T004 `countGraphemes`의 실패 유닛 테스트를 `__tests__/charCount.test.ts`에 작성(RED): contracts/count-graphemes.md 계약표 9행 전부 — `""`→0, `"안녕"`→2, `"hello"`→5, `"a b\nc"`→5, `"   "`→3, `"👨‍👩‍👧"`(ZWJ)→1, `"🇰🇷"`(국기)→1, `"👍🏽"`(피부톤)→1, `"가나다😀"`→4. 모듈 미존재로 **실패함을 확인**
-- [ ] T005 `lib/charCount.ts`에 `countGraphemes(text: string): number`를 구현하여 T004를 통과(GREEN): 모듈 스코프에서 1회 생성한 `Intl.Segmenter('ko', { granularity: 'grapheme' })`로 분절 개수 계수. `npm test -- __tests__/charCount.test.ts`로 GREEN 확인
+- [X] T004 `countGraphemes`의 실패 유닛 테스트를 `__tests__/charCount.test.ts`에 작성(RED): contracts/count-graphemes.md 계약표 9행 전부 — `""`→0, `"안녕"`→2, `"hello"`→5, `"a b\nc"`→5, `"   "`→3, `"👨‍👩‍👧"`(ZWJ)→1, `"🇰🇷"`(국기)→1, `"👍🏽"`(피부톤)→1, `"가나다😀"`→4. 모듈 미존재로 **실패함을 확인**
+- [X] T005 `lib/charCount.ts`에 `countGraphemes(text: string): number`를 구현하여 T004를 통과(GREEN): 모듈 스코프에서 1회 생성한 `Intl.Segmenter('ko', { granularity: 'grapheme' })`로 분절 개수 계수. `npm test -- __tests__/charCount.test.ts`로 GREEN 확인
 
 **Checkpoint**: `countGraphemes` 검증 완료 — 컴포넌트/전 스토리가 이 위에 구축 가능.
 
