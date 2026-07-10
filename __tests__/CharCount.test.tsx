@@ -24,3 +24,10 @@ test("text prop이 바뀌면 표시 숫자가 즉시 갱신된다 (실시간, FR
   rerender(<CharCount text="hiya" />);
   expect(screen.getByText("4자")).toBeDefined();
 });
+
+test("상호작용 없이 초기 마운트 시 저장된 내용의 글자 수를 즉시 표시한다 (US2, FR-003)", () => {
+  // 기존 글을 연 직후 상태: 아무 입력 없이 현재 content의 글자 수가 바로 보여야 한다.
+  const content = "가".repeat(120);
+  render(<CharCount text={content} />);
+  expect(screen.getByText("120자")).toBeDefined();
+});

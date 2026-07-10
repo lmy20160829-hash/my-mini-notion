@@ -77,7 +77,7 @@ description: "Task list for 내용 글자 수 카운터 (Content Character Count
 
 ### Tests for User Story 2 ⚠️
 
-- [ ] T011 [US2] `__tests__/CharCount.test.tsx`에 초기 마운트 정확성 커버리지 테스트 추가: 비어있지 않은 초기 `text`(예: 120 grapheme 문자열)로 마운트 시 상호작용 없이 `120자` 렌더 확인(FR-003). 공유 컴포넌트에 대해 green 기대 — 실패 시 초기 렌더 결함을 드러냄
+- [X] T011 [US2] `__tests__/CharCount.test.tsx`에 초기 마운트 정확성 커버리지 테스트 추가: 비어있지 않은 초기 `text`(예: 120 grapheme 문자열)로 마운트 시 상호작용 없이 `120자` 렌더 확인(FR-003). 공유 컴포넌트에 대해 green 기대 — 실패 시 초기 렌더 결함을 드러냄
 
 ### Implementation for User Story 2
 
