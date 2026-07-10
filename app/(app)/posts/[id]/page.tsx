@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Calendar, ChevronRight, Star, Trash2 } from "lucide-react";
 import { formatDate, useApp } from "@/lib/store";
 import { IconButton } from "@/components/ui/IconButton";
+import { CharCount } from "@/components/CharCount";
 
 export default function PostDetailPage() {
   const app = useApp();
@@ -85,6 +86,7 @@ export default function PostDetailPage() {
         onChange={(e) => app.updatePost(post.id, { content: e.target.value })}
         placeholder="내용을 입력하세요. 떠오르는 생각, 할 일, 메모를 자유롭게 기록해 보세요."
       />
+      <CharCount text={post.content} />
     </div>
   );
 }

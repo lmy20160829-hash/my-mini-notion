@@ -56,14 +56,14 @@ description: "Task list for 내용 글자 수 카운터 (Content Character Count
 
 ### Tests for User Story 1 ⚠️ (먼저 작성 → 실패 확인 후 구현)
 
-- [ ] T006 [US1] `<CharCount>` 실패 컴포넌트 테스트를 `__tests__/CharCount.test.tsx`에 작성(RED): contracts/char-count-component.md 렌더 계약 — `"hello"`→`5자`, `"안녕하세요"`→`5자`, 그리고 `text` prop 변경 `"hi"`→`"hiya"` 시 `2자`→`4자` 실시간 갱신(FR-002). 컴포넌트 미존재로 **실패함을 확인**
+- [X] T006 [US1] `<CharCount>` 실패 컴포넌트 테스트를 `__tests__/CharCount.test.tsx`에 작성(RED): contracts/char-count-component.md 렌더 계약 — `"hello"`→`5자`, `"안녕하세요"`→`5자`, 그리고 `text` prop 변경 `"hi"`→`"hiya"` 시 `2자`→`4자` 실시간 갱신(FR-002). 컴포넌트 미존재로 **실패함을 확인**
 
 ### Implementation for User Story 1
 
-- [ ] T007 [US1] `components/CharCount.tsx`에 props 전용 클라이언트 컴포넌트 `CharCount({ text }: { text: string })` 구현 — `<div className="detail-charcount">{countGraphemes(text)}자</div>` 렌더(스토어·라우터·내부 상태 없음). T006 통과(GREEN)
-- [ ] T008 [US1] `app/globals.css`의 "글 상세" 섹션에 `.detail-charcount` 조각 추가 — DESIGN.md 토큰만 사용(`--surface-card`, `--border-subtle`, `--radius-pill`, `--shadow-xs`, `--text-muted`) + `position:sticky; bottom:24px; margin-left:auto; width:fit-content; padding:3px 10px; font-size:12px; user-select:none; pointer-events:none`(contracts/char-count-component.md CSS 계약). 신규 hex/그림자 원시값 금지
-- [ ] T009 [US1] T008과 **같은 변경**에서 `DESIGN.md` 갱신(헌법 III): §2.7에 글자 수 칩 `.detail-charcount` 항목(토큰·상태·마크업), §4.3 "글 상세"에 본문 다음 카운트 칩 추가, §6.4 콘텐츠 인벤토리에 문구 `{n}자` 추가
-- [ ] T010 [US1] `app/(app)/posts/[id]/page.tsx`에서 내용 `<textarea>`(`.detail-content`) **바로 다음 마지막 자식**으로 `<CharCount text={post.content} />` 통합 — `post.content`만 전달하고 `post.title`은 전달하지 않음(FR-008)
+- [X] T007 [US1] `components/CharCount.tsx`에 props 전용 클라이언트 컴포넌트 `CharCount({ text }: { text: string })` 구현 — `<div className="detail-charcount">{countGraphemes(text)}자</div>` 렌더(스토어·라우터·내부 상태 없음). T006 통과(GREEN)
+- [X] T008 [US1] `app/globals.css`의 "글 상세" 섹션에 `.detail-charcount` 조각 추가 — DESIGN.md 토큰만 사용(`--surface-card`, `--border-subtle`, `--radius-pill`, `--shadow-xs`, `--text-muted`) + `position:sticky; bottom:24px; margin-left:auto; width:fit-content; padding:3px 10px; font-size:12px; user-select:none; pointer-events:none`(contracts/char-count-component.md CSS 계약). 신규 hex/그림자 원시값 금지
+- [X] T009 [US1] T008과 **같은 변경**에서 `DESIGN.md` 갱신(헌법 III): §2.7에 글자 수 칩 `.detail-charcount` 항목(토큰·상태·마크업), §4.3 "글 상세"에 본문 다음 카운트 칩 추가, §6.4 콘텐츠 인벤토리에 문구 `{n}자` 추가
+- [X] T010 [US1] `app/(app)/posts/[id]/page.tsx`에서 내용 `<textarea>`(`.detail-content`) **바로 다음 마지막 자식**으로 `<CharCount text={post.content} />` 통합 — `post.content`만 전달하고 `post.title`은 전달하지 않음(FR-008)
 
 **Checkpoint**: US1 완결 — 글을 열어 타이핑하면 우측 하단 칩이 실시간으로 갱신되는 MVP 동작. 여기서 멈춰 독립 검증/데모 가능.
 

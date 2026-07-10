@@ -421,6 +421,14 @@ input::placeholder, textarea::placeholder { color: var(--text-placeholder); }
   width: 100%; min-height: 340px; border: none; outline: none; background: transparent;
   font-size: 15px; line-height: 1.75; color: var(--text-body); padding: 0;
 }
+/* 글자 수 칩: 편집 컬럼 우측 하단 sticky. pointer-events:none으로 본문 편집 비방해. */
+.detail-charcount {
+  position: sticky; bottom: 24px; margin-left: auto; width: fit-content;
+  padding: 3px 10px; background: var(--surface-card);
+  border: 1px solid var(--border-subtle); border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-xs); font-size: 12px; color: var(--text-muted);
+  user-select: none; pointer-events: none;
+}
 
 /* ============================================================
    마이 페이지
