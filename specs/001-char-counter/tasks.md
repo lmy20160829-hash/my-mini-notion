@@ -81,7 +81,7 @@ description: "Task list for 내용 글자 수 카운터 (Content Character Count
 
 ### Implementation for User Story 2
 
-- [ ] T012 [US2] US2 독립 검증(수동, quickstart.md 단계 2 & FR-011): `npm run dev`에서 내용 있는 글을 열면 칩에 현재 수 즉시 표시, 다른 글로 이동 시 칩이 새 글 `post.content` 기준으로 갱신됨을 `app/(app)/posts/[id]/page.tsx`에서 확인
+- [X] T012 [US2] US2 독립 검증(quickstart.md 단계 2 & FR-011): 내용 있는 글을 열면 칩에 현재 수 즉시 표시, 다른 글로 이동 시 칩이 새 글 `post.content` 기준으로 갱신됨을 확인 — 브라우저 툴링 부재로 수동 대신 자동 페이지 통합 테스트 `__tests__/PostDetailPage.charcount.test.tsx`로 실행(실제 store+page+CharCount, next/navigation만 모킹). FR-003→`5자`, FR-011 전환→`7자` 통과
 
 **Checkpoint**: US1·US2 모두 독립 동작 — 열자마자 정확 + 입력 중 실시간.
 
