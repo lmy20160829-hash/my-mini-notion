@@ -6,6 +6,7 @@ import { ArrowLeft, Calendar, ChevronRight, Star, Trash2 } from "lucide-react";
 import { formatDate, useApp } from "@/lib/store";
 import { IconButton } from "@/components/ui/IconButton";
 import { CharCount } from "@/components/CharCount";
+import { PostCover } from "@/components/PostCover";
 
 export default function PostDetailPage() {
   const app = useApp();
@@ -67,6 +68,8 @@ export default function PostDetailPage() {
           삭제
         </button>
       </div>
+
+      <PostCover key={post.id} />
 
       <input
         className="detail-title"

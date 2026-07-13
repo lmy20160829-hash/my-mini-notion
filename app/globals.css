@@ -409,6 +409,38 @@ input::placeholder, textarea::placeholder { color: var(--text-placeholder); }
 }
 .detail-delete-btn:hover { background: #fdeae9; }
 
+/* 커버 이미지: 제목 입력창 위 배너. 로딩/표시/실패 상태가 동일 박스를 점유(레이아웃 이동 방지). 장식 요소(aria-hidden). */
+.detail-cover {
+  position: relative; width: 100%; height: 200px;
+  margin: 0 0 20px; border-radius: var(--radius-lg);
+  overflow: hidden; background: var(--surface-subtle);
+  box-shadow: var(--shadow-xs);
+}
+/* 커버 이미지: 로드 완료 시 페이드인. 로딩 중에는 opacity 0(스켈레톤이 그 위를 덮음). */
+.detail-cover__img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+  opacity: 0; transition: opacity var(--dur-normal) var(--ease-standard);
+}
+.detail-cover__img[data-cover="image"] { opacity: 1; }
+/* 스켈레톤: 스피너 대신 그래파이트 톤 shimmer. 커버 박스를 그대로 덮음. */
+.detail-cover__skeleton {
+  position: absolute; inset: 0;
+  background: linear-gradient(100deg,
+    var(--surface-subtle) 30%, var(--surface-hover) 50%, var(--surface-subtle) 70%);
+  background-size: 200% 100%;
+  animation: mnShimmer 1.4s ease-in-out infinite;
+}
+@keyframes mnShimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .detail-cover__skeleton { animation: none; background: var(--surface-hover); }
+}
+/* 실패 폴백: 깨진 이미지 대신 커버 공간을 보존하는 중립 자리표시자. */
+.detail-cover__fallback {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--surface-subtle); color: var(--text-placeholder);
+}
+
 .detail-title {
   width: 100%; border: none; outline: none; background: transparent;
   font-size: 34px; font-weight: 700; color: var(--text-strong);
