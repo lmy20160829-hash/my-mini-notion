@@ -1,0 +1,65 @@
+name: Deploy to GitHub Pages
+
+# main에 push되면 정적 export를 빌드해 GitHub Pages로 배포한다.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+# GitHub Pages 배포에 필요한 최소 권한.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 배포는 한 번에 하나만. 진행 중 배포는 취소하지 않고 큐잉한다.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build static export (out/)
+        run: npm run build
+
+      - name: SPA fallback for client-only routes
+        # 정적 호스트에서 /posts/<id>/ 새로고침·딥링크가 하드 404 나지 않도록
+        # 앱 셸(index.html)을 404.html로 복사한다. 클라이언트 라우터가 부팅되고,
+        # localStorage에 글이 있으면 그대로, 없으면 '/'로 되돌린다.
+        run: cp out/index.html out/404.html
+
+      - name: Disable Jekyll (_next/ 폴더 보존)
+        run: touch out/.nojekyll
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: out
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
