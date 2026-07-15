@@ -77,7 +77,8 @@ type AuthState = {
 [/login] 버튼 클릭
   → supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: { redirectTo: `${origin}${basePath}/login/` }
+        // 현재 로그인 페이지 URL로 복귀 — 서브패스/로컬 모두 자동으로 맞음
+        options: { redirectTo: window.location.origin + window.location.pathname }
     })
   → 브라우저가 Google 동의 화면으로 이동
   → 승인 후 Google → Supabase 콜백
@@ -127,15 +128,14 @@ Google `user`에서:
 |---|---|
 | `NEXT_PUBLIC_SUPABASE_URL` | `https://ubkcexwugcyixflqnhgr.supabase.co` |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase 대시보드 Settings → API → anon public (직접 제공 또는 MCP 재시작 후 조회) |
-| `NEXT_PUBLIC_BASE_PATH` | 프로덕션 `/mini-notion-next`, 로컬 미설정(빈값). `redirectTo` 조립 + `next.config` basePath 단일 출처 |
 
+- **redirect 경로**: 별도 env 없이 런타임에 `window.location.origin + pathname`으로 조립하므로
+  프로덕션 서브패스(`/mini-notion-next/login/`)와 로컬(`localhost:3000/login`) 모두 자동으로 맞다.
+  `next.config.ts`의 `basePath`는 기존대로 `NODE_ENV==='production'`일 때 `/mini-notion-next` 유지(변경 없음).
 - **로컬**: `.env.local`(gitignore)에 위 값. `.env.example` 커밋으로 형식 문서화.
 - **CI**: GitHub Actions 빌드 스텝에 repo Variables로 주입(anon 키는 공개 안전).
-- `lib/supabase.ts`는 URL/KEY 누락 시 명확한 오류를 던지고, 로그인 페이지는 그 오류를
-  인라인으로 안내한다(설정 전 상태에서도 앱이 크래시하지 않도록).
-
-`next.config.ts`의 `basePath`도 `NEXT_PUBLIC_BASE_PATH`를 참조하도록 통일한다
-(기본값 `/mini-notion-next`는 프로덕션 유지).
+- `isSupabaseConfigured`(env 누락 감지)로 설정 전에도 앱이 크래시하지 않게 하고,
+  로그인 페이지는 인증 오류를 인라인으로 안내한다.
 
 ## 10. 배포 워크플로 변경 (`.github/workflows/deploy.yml`)
 
@@ -147,7 +147,6 @@ Google `user`에서:
   env:
     NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
     NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-    NEXT_PUBLIC_BASE_PATH: /mini-notion-next
 ```
 
 repo → Settings → Secrets and variables → Actions → **Variables**에

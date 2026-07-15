@@ -35,6 +35,11 @@ jobs:
 
       - name: Build static export (out/)
         run: npm run build
+        env:
+          # 공개 키(빌드 시 클라이언트 번들로 인라인). repo → Settings →
+          # Secrets and variables → Actions → Variables 에 등록.
+          NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
 
       - name: SPA fallback for client-only routes
         # 정적 호스트에서 /posts/<id>/ 새로고침·딥링크가 하드 404 나지 않도록

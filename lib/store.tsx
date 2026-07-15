@@ -17,8 +17,6 @@ export type Post = {
 };
 
 const KEY = "mini-notion-v1";
-const OWNER_NAME = "김민수";
-const EMAIL = "minsu.kim@gmail.com";
 
 function uid() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
@@ -78,17 +76,13 @@ export function formatDate(ts: number): string {
 
 type AppState = {
   loaded: boolean;
-  loggedIn: boolean;
   posts: Post[];
+  // 로컬 프로필 오버라이드(구글 기본값 위에 덮어씀). 표시는 useProfile이 병합한다.
   nickname: string | null;
   avatar: string | null;
 };
 
 type AppStore = AppState & {
-  displayName: string;
-  email: string;
-  login(): void;
-  logout(): void;
   createPost(title: string): Post;
   updatePost(id: string, patch: Partial<Pick<Post, "title" | "content">>): void;
   toggleFavorite(id: string): void;
@@ -102,7 +96,6 @@ const AppContext = createContext<AppStore | null>(null);
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AppState>({
     loaded: false,
-    loggedIn: false,
     posts: [],
     nickname: null,
     avatar: null,
@@ -113,7 +106,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     let posts: Post[] = [];
     let nickname: string | null = null;
     let avatar: string | null = null;
-    let loggedIn = false;
     try {
       const raw = localStorage.getItem(KEY);
       if (raw) {
@@ -121,14 +113,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         posts = Array.isArray(d.posts) ? d.posts : [];
         nickname = d.nickname || null;
         avatar = d.avatar || null;
-        loggedIn = !!d.loggedIn;
       } else {
         posts = seed();
       }
     } catch {
       posts = seed();
     }
-    setState({ loaded: true, loggedIn, posts, nickname, avatar });
+    setState({ loaded: true, posts, nickname, avatar });
   }, []);
 
   // Persist on every change after initial load.
@@ -141,20 +132,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           posts: state.posts,
           nickname: state.nickname,
           avatar: state.avatar,
-          loggedIn: state.loggedIn,
         })
       );
     } catch {}
   }, [state]);
-
-  const login = useCallback(
-    () => setState((s) => ({ ...s, loggedIn: true })),
-    []
-  );
-  const logout = useCallback(
-    () => setState((s) => ({ ...s, loggedIn: false })),
-    []
-  );
 
   const createPost = useCallback((title: string): Post => {
     const post: Post = {
@@ -201,10 +182,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const store: AppStore = {
     ...state,
-    displayName: state.nickname || OWNER_NAME,
-    email: EMAIL,
-    login,
-    logout,
     createPost,
     updatePost,
     toggleFavorite,

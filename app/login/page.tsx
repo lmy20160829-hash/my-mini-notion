@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useApp } from "@/lib/store";
+import { useAuth } from "@/lib/auth";
 
 function GoogleLogo() {
   return (
@@ -28,18 +28,35 @@ function GoogleLogo() {
 }
 
 export default function LoginPage() {
-  const app = useApp();
+  const auth = useAuth();
   const router = useRouter();
+  const [submitting, setSubmitting] = useState(false);
+  const [returning, setReturning] = useState(false);
 
-  // Already signed in → straight to the workspace.
+  // OAuth 복귀(?code=)인지 마운트 시 1회 확인(supabase가 URL을 정리하기 전에).
   useEffect(() => {
-    if (app.loaded && app.loggedIn) router.replace("/");
-  }, [app.loaded, app.loggedIn, router]);
+    setReturning(new URLSearchParams(window.location.search).has("code"));
+  }, []);
 
-  const handleLogin = () => {
-    app.login();
-    router.push("/");
+  // 세션이 확정되면 워크스페이스로.
+  useEffect(() => {
+    if (auth.ready && auth.session) router.replace("/");
+  }, [auth.ready, auth.session, router]);
+
+  const handleLogin = async () => {
+    setSubmitting(true);
+    await auth.signInWithGoogle();
+    // 성공하면 Google로 리다이렉트되어 아래는 실행되지 않는다. 실패 시에만 복귀.
+    setSubmitting(false);
   };
+
+  // 복귀 code 교환 중이거나 클릭 직후에는 버튼을 잠근다.
+  const busy = submitting || (returning && !auth.ready);
+  const label = submitting
+    ? "연결 중…"
+    : returning && !auth.ready
+      ? "로그인 처리 중…"
+      : "Google 계정으로 계속하기";
 
   return (
     <div className="login-page">
@@ -51,10 +68,16 @@ export default function LoginPage() {
           <br />
           구글 계정으로 바로 시작하세요.
         </p>
-        <button type="button" className="login-google-btn" onClick={handleLogin}>
+        <button
+          type="button"
+          className="login-google-btn"
+          onClick={handleLogin}
+          disabled={busy}
+        >
           <GoogleLogo />
-          Google 계정으로 계속하기
+          {label}
         </button>
+        {auth.error && <p className="login-error">{auth.error}</p>}
         <p className="login-card__terms">
           로그인하면 서비스 약관 및 개인정보 처리방침에
           <br />

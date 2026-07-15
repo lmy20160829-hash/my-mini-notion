@@ -3,19 +3,23 @@
 import { useEffect, useRef, useState } from "react";
 import { Check, Image as ImageIcon, LogOut, Mail } from "lucide-react";
 import { useApp } from "@/lib/store";
+import { useAuth } from "@/lib/auth";
+import { useProfile } from "@/lib/profile";
 import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 
 export default function MyPage() {
   const app = useApp();
+  const auth = useAuth();
+  const profile = useProfile();
   const [nickDraft, setNickDraft] = useState("");
   const [saved, setSaved] = useState(false);
   const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Fill the draft once profile data is loaded.
   useEffect(() => {
-    if (app.loaded) setNickDraft(app.displayName);
+    if (app.loaded) setNickDraft(profile.displayName);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [app.loaded]);
 
@@ -51,7 +55,7 @@ export default function MyPage() {
 
       <div className="mypage-card">
         <div className="mypage-avatar-row">
-          <Avatar name={app.displayName} src={app.avatar} size={72} />
+          <Avatar name={profile.displayName} src={profile.avatarUrl} size={72} />
           <div className="mypage-avatar-row__body">
             <div className="mypage-avatar-row__name">프로필 이미지</div>
             <div className="mypage-avatar-row__hint">
@@ -85,7 +89,7 @@ export default function MyPage() {
           <label>이메일</label>
           <div className="field-readonly">
             <Mail size={16} />
-            <span className="field-readonly__value">{app.email}</span>
+            <span className="field-readonly__value">{profile.email}</span>
             <Badge>Google 계정</Badge>
           </div>
         </div>
@@ -110,7 +114,7 @@ export default function MyPage() {
             이 기기에서 계정을 로그아웃합니다.
           </div>
         </div>
-        <Button variant="secondary" iconLeft={LogOut} onClick={app.logout}>
+        <Button variant="secondary" iconLeft={LogOut} onClick={auth.signOut}>
           로그아웃
         </Button>
       </div>

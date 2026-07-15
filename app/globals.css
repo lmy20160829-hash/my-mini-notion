@@ -280,6 +280,9 @@ input::placeholder, textarea::placeholder { color: var(--text-placeholder); }
   transition: background var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard);
 }
 .login-google-btn:hover { background: var(--surface-hover); border-color: var(--border-strong); }
+.login-google-btn:disabled { cursor: default; opacity: 0.6; }
+.login-google-btn:disabled:hover { background: var(--surface-card); border-color: var(--border-default); }
+.login-error { margin: 14px 0 0; font-size: 13px; line-height: 1.5; color: var(--status-danger); }
 .login-card__terms { margin: 22px 0 0; font-size: 12px; line-height: 1.6; color: var(--text-muted); }
 
 /* ============================================================

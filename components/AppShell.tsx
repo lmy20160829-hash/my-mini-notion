@@ -18,6 +18,8 @@ import {
   Trash2,
 } from "lucide-react";
 import { useApp } from "@/lib/store";
+import { useAuth } from "@/lib/auth";
+import { useProfile } from "@/lib/profile";
 import { Avatar } from "@/components/ui/Avatar";
 import { IconButton } from "@/components/ui/IconButton";
 import { SidebarItem } from "@/components/ui/SidebarItem";
@@ -25,16 +27,19 @@ import { SidebarSection } from "@/components/ui/SidebarSection";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const app = useApp();
+  const auth = useAuth();
+  const profile = useProfile();
   const router = useRouter();
   const pathname = usePathname();
   const [search, setSearch] = useState("");
 
   // Client-side auth guard: bounce to /login when signed out.
   useEffect(() => {
-    if (app.loaded && !app.loggedIn) router.replace("/login");
-  }, [app.loaded, app.loggedIn, router]);
+    if (auth.ready && !auth.session) router.replace("/login");
+  }, [auth.ready, auth.session, router]);
 
-  if (!app.loaded || !app.loggedIn) return null;
+  // 인증이 확정되기 전(또는 글 로드 전)에는 아무것도 그리지 않는다.
+  if (!auth.ready || !auth.session || !app.loaded) return null;
 
   const q = search.trim().toLowerCase();
   const navPosts = q
@@ -122,9 +127,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             className="sidebar__profile"
             onClick={() => router.push("/mypage")}
           >
-            <Avatar name={app.displayName} src={app.avatar} size={28} />
+            <Avatar name={profile.displayName} src={profile.avatarUrl} size={28} />
             <span className="sidebar__profile-body">
-              <span className="sidebar__profile-name">{app.displayName}</span>
+              <span className="sidebar__profile-name">{profile.displayName}</span>
               <br />
               <span className="sidebar__profile-sub">마이 페이지</span>
             </span>
