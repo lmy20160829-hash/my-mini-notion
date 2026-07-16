@@ -5,10 +5,12 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
 } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { getSupabase, isSupabaseConfigured } from "./supabase";
+import { syncProfileRow } from "./profile-sync";
 
 type AuthContextValue = {
   /** 초기 세션 확인(및 OAuth code 교환)이 끝났는지. 게이트 판단의 기준. */
@@ -32,6 +34,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // profile 테이블에 이미 동기화한 사용자 id. 사용자당 1회만 쓰기 위함.
+  const syncedUserIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     // 설정 전(env 없음): 인증은 불가하지만 앱은 로드되게 ready 처리.
@@ -51,22 +55,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const supabase = getSupabase();
     let mounted = true;
 
+    // 세션을 상태에 반영하고, 새 로그인이면 구글 인증 정보를 profile 테이블에 저장한다.
+    const applySession = (s: Session | null) => {
+      if (!mounted) return;
+      setSession(s);
+      setReady(true);
+      const uid = s?.user?.id ?? null;
+      if (s?.user && uid !== syncedUserIdRef.current) {
+        syncedUserIdRef.current = uid;
+        // 화면 렌더를 막지 않도록 대기하지 않는다(실패는 함수 내부에서 로깅).
+        void syncProfileRow(s.user);
+      }
+    };
+
     // OAuth 복귀(?code=)면 code 교환이 끝난 뒤(onAuthStateChange)에 ready 처리해
     // 로그인 화면이 잠깐 깜빡이는 것을 막는다. 아니면 즉시 확인.
     const pendingExchange = hasParam("code");
     if (!pendingExchange) {
-      supabase.auth.getSession().then(({ data }) => {
-        if (!mounted) return;
-        setSession(data.session);
-        setReady(true);
-      });
+      supabase.auth.getSession().then(({ data }) => applySession(data.session));
     }
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
-      if (!mounted) return;
-      setSession(s);
-      setReady(true);
-    });
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, s) =>
+      applySession(s)
+    );
 
     return () => {
       mounted = false;
