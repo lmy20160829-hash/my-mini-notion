@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Calendar, ChevronRight, Star, Trash2 } from "lucide-react";
+import { ArrowLeft, Calendar, ChevronRight, Trash2 } from "lucide-react";
 import { formatDate, useApp } from "@/lib/store";
 import { IconButton } from "@/components/ui/IconButton";
 import { CharCount } from "@/components/CharCount";
@@ -51,14 +51,6 @@ export function PostDetailClient() {
           {post.title.trim() || "제목 없음"}
         </span>
         <div className="detail-breadcrumb__spacer" />
-        <button
-          type="button"
-          className={`detail-fav-btn${post.favorite ? " is-fav" : ""}`}
-          title="즐겨찾기"
-          onClick={() => app.toggleFavorite(post.id)}
-        >
-          <Star size={18} />
-        </button>
         <button
           type="button"
           className="detail-delete-btn"

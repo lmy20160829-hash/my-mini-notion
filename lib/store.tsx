@@ -12,7 +12,6 @@ export type Post = {
   id: string;
   title: string;
   content: string;
-  favorite: boolean;
   createdAt: number;
 };
 
@@ -32,7 +31,6 @@ function seed(): Post[] {
       title: "이번 주 할 일 정리",
       content:
         "- 디자인 시안 마무리\n- 개발 일정 공유\n- 회의록 정리해서 팀에 전달\n- 다음 스프린트 백로그 다듬기",
-      favorite: true,
       createdAt: now - 2 * D,
     },
     {
@@ -40,7 +38,6 @@ function seed(): Post[] {
       title: "회의 준비 메모",
       content:
         "다음 주 킥오프 미팅 안건\n\n1. 이번 분기 목표 정렬\n2. 역할과 담당 분담\n3. 마일스톤과 일정 확정",
-      favorite: false,
       createdAt: now - 1 * D,
     },
     {
@@ -48,14 +45,12 @@ function seed(): Post[] {
       title: "아이디어 노트",
       content:
         "개인 생산성 도구에 추가하면 좋을 기능들을 떠오를 때마다 적어두는 공간. 태그, 검색, 할 일 체크박스 등.",
-      favorite: false,
       createdAt: now - 4 * H,
     },
     {
       id: uid(),
       title: "읽을거리 모음",
       content: "",
-      favorite: false,
       createdAt: now - 40 * 60e3,
     },
   ];
@@ -85,7 +80,6 @@ type AppState = {
 type AppStore = AppState & {
   createPost(title: string): Post;
   updatePost(id: string, patch: Partial<Pick<Post, "title" | "content">>): void;
-  toggleFavorite(id: string): void;
   deletePost(id: string): void;
   saveNickname(nick: string): void;
   setAvatar(dataUrl: string): void;
@@ -142,7 +136,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       id: uid(),
       title: (title || "").trim(),
       content: "",
-      favorite: false,
       createdAt: Date.now(),
     };
     setState((s) => ({ ...s, posts: [post, ...s.posts] }));
@@ -158,15 +151,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     },
     []
   );
-
-  const toggleFavorite = useCallback((id: string) => {
-    setState((s) => ({
-      ...s,
-      posts: s.posts.map((p) =>
-        p.id === id ? { ...p, favorite: !p.favorite } : p
-      ),
-    }));
-  }, []);
 
   const deletePost = useCallback((id: string) => {
     setState((s) => ({ ...s, posts: s.posts.filter((p) => p.id !== id) }));
@@ -184,7 +168,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     ...state,
     createPost,
     updatePost,
-    toggleFavorite,
     deletePost,
     saveNickname,
     setAvatar,

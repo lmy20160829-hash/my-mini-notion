@@ -102,7 +102,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     key={post.id}
                     icon={FileText}
                     label={post.title.trim() || "제목 없음"}
-                    favorite={post.favorite}
                     active={pathname === `/posts/${post.id}`}
                     onClick={() => router.push(`/posts/${post.id}`)}
                   />

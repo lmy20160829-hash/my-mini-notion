@@ -1,12 +1,11 @@
 "use client";
 
-import { Star, type LucideIcon } from "lucide-react";
+import { type LucideIcon } from "lucide-react";
 
 type SidebarItemProps = {
   icon: LucideIcon;
   label: string;
   active?: boolean;
-  favorite?: boolean;
   onClick?: () => void;
 };
 
@@ -14,7 +13,6 @@ export function SidebarItem({
   icon: Icon,
   label,
   active,
-  favorite,
   onClick,
 }: SidebarItemProps) {
   return (
@@ -27,11 +25,6 @@ export function SidebarItem({
         <Icon size={16} />
       </span>
       <span className="sidebar-item__label">{label}</span>
-      {favorite && (
-        <span className="sidebar-item__star">
-          <Star size={13} />
-        </span>
-      )}
     </button>
   );
 }

@@ -9,7 +9,6 @@ import {
   FileText,
   Plus,
   SquarePen,
-  Star,
 } from "lucide-react";
 import { formatDate, useApp } from "@/lib/store";
 import { Badge } from "@/components/ui/Badge";
@@ -132,17 +131,6 @@ export default function ListPage() {
                 <span className="post-card__date">
                   {formatDate(post.createdAt)}
                 </span>
-                <button
-                  type="button"
-                  className={`fav-btn${post.favorite ? " is-fav" : ""}`}
-                  title="즐겨찾기"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    app.toggleFavorite(post.id);
-                  }}
-                >
-                  <Star size={16} />
-                </button>
                 <span className="post-card__chevron">
                   <ChevronRight size={16} />
                 </span>
