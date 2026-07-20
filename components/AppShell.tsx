@@ -70,14 +70,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <ThemeToggle />
         </div>
         <div className="topbar__spacer" />
+        {/* 상단바 아이콘은 전부 아직 만들지 않은 기능이다. 눌리는 것처럼 보이면
+            고장으로 오해되므로 비활성으로 표시한다(§3.2). 알림 점도 장식이다. */}
         <div className="topbar__bell">
-          <IconButton icon={Bell} title="알림" />
+          <IconButton icon={Bell} title="알림" disabled />
           <span className="topbar__bell-dot" />
         </div>
-        <IconButton icon={Search} title="검색" />
-        <IconButton icon={CircleHelp} title="도움말" />
-        <IconButton icon={LayoutGrid} title="앱" />
-        <IconButton icon={Menu} title="메뉴" />
+        <IconButton icon={Search} title="검색" disabled />
+        <IconButton icon={CircleHelp} title="도움말" disabled />
+        <IconButton icon={LayoutGrid} title="앱" disabled />
+        <IconButton icon={Menu} title="메뉴" disabled />
       </header>
 
       <div className="app-body">
@@ -146,17 +148,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   <div style={{ height: 10 }} />
                 </>
               )}
+              {/* "앱" 섹션 3종도 아직 만들지 않은 기능이다(§3.3). */}
               {collapsed ? (
                 <>
-                  <SidebarItem icon={Calendar} label="캘린더" />
-                  <SidebarItem icon={SquareCheck} label="할 일" />
-                  <SidebarItem icon={Trash2} label="휴지통" />
+                  <SidebarItem icon={Calendar} label="캘린더" disabled />
+                  <SidebarItem icon={SquareCheck} label="할 일" disabled />
+                  <SidebarItem icon={Trash2} label="휴지통" disabled />
                 </>
               ) : (
                 <SidebarSection label="앱">
-                  <SidebarItem icon={Calendar} label="캘린더" />
-                  <SidebarItem icon={SquareCheck} label="할 일" />
-                  <SidebarItem icon={Trash2} label="휴지통" />
+                  <SidebarItem icon={Calendar} label="캘린더" disabled />
+                  <SidebarItem icon={SquareCheck} label="할 일" disabled />
+                  <SidebarItem icon={Trash2} label="휴지통" disabled />
                 </SidebarSection>
               )}
             </div>

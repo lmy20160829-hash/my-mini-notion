@@ -226,6 +226,15 @@ input::placeholder, textarea::placeholder { color: var(--text-placeholder); }
 .icon-btn:hover { background: var(--surface-hover); color: var(--text-secondary); }
 .icon-btn:active { background: var(--surface-active); }
 .icon-btn--sm { width: 24px; height: 24px; border-radius: var(--radius-sm); }
+/* 아직 만들지 않은 기능. .login-google-btn:disabled 와 같은 관행(흐리게 + 기본 커서).
+   호버 배경을 되돌려 "눌리는 요소"로 보이지 않게 한다. 툴팁은 살아 있어야 하므로
+   pointer-events 는 끄지 않는다(§2.2). */
+.icon-btn.is-disabled,
+.sidebar-item.is-disabled { cursor: default; opacity: 0.45; }
+.icon-btn.is-disabled:hover { background: none; color: var(--text-muted); }
+.icon-btn.is-disabled:active { background: none; }
+.sidebar-item.is-disabled:hover { background: none; }
+
 /* Badge (neutral / sm) */
 .badge {
   display: inline-flex; align-items: center; height: 18px; padding: 0 7px; flex: none;
