@@ -16,7 +16,8 @@ type UserLike = {
 
 type Overrides = {
   nickname: string | null;
-  avatar: string | null;
+  /** Storage 에 올린 프로필 사진 URL(= 환경변수 앞부분 + profile.image_path). */
+  imageUrl: string | null;
 };
 
 function str(v: unknown): string {
@@ -24,8 +25,9 @@ function str(v: unknown): string {
 }
 
 /**
- * 구글 계정 정보와 로컬 오버라이드(마이페이지에서 바꾼 별명/아바타)를 병합한다.
- * 로컬 오버라이드가 있으면 우선하고, 없으면 구글 기본값을 쓴다.
+ * 구글 계정 정보와 오버라이드(마이페이지에서 바꾼 별명 / 업로드한 프로필 사진)를 병합한다.
+ * 오버라이드가 있으면 우선하고, 없으면 구글 기본값을 쓴다.
+ * 별명은 로컬(localStorage), 사진은 서버(profile.image_path)에서 온다.
  * 순수 함수라 단위 테스트가 쉽다.
  */
 export function mergeProfile(user: UserLike, overrides: Overrides): Profile {
@@ -37,7 +39,7 @@ export function mergeProfile(user: UserLike, overrides: Overrides): Profile {
   return {
     displayName: overrides.nickname || googleName || email || "사용자",
     email,
-    avatarUrl: overrides.avatar || googleAvatar,
+    avatarUrl: overrides.imageUrl || googleAvatar,
   };
 }
 
@@ -45,5 +47,8 @@ export function mergeProfile(user: UserLike, overrides: Overrides): Profile {
 export function useProfile(): Profile {
   const { user } = useAuth();
   const app = useApp();
-  return mergeProfile(user, { nickname: app.nickname, avatar: app.avatar });
+  return mergeProfile(user, {
+    nickname: app.nickname,
+    imageUrl: app.profileImageUrl,
+  });
 }

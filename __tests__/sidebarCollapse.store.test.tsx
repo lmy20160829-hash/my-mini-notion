@@ -23,7 +23,7 @@ vi.mock("@/lib/supabase", () => ({
         then: (res: (v: unknown) => unknown) =>
           Promise.resolve({ data: [], error: null }).then(res),
       };
-      for (const m of ["select", "order", "eq"]) q[m] = () => q;
+      for (const m of ["select", "order", "eq", "maybeSingle"]) q[m] = () => q;
       return q;
     },
   }),
@@ -84,20 +84,16 @@ test("연속 토글해도 마지막 호출의 최종 상태로 수렴한다 (Edg
 
 // FR-010 / SC-004: 상태는 기존 localStorage 스키마에 함께 영속화된다.
 test("접힘 상태가 localStorage에 저장된다 (FR-010/SC-004)", () => {
-  localStorage.setItem(
-    KEY,
-    JSON.stringify({ nickname: "김민수", avatar: "data:image/png;base64,AAA" })
-  );
+  localStorage.setItem(KEY, JSON.stringify({ nickname: "김민수" }));
   renderStore();
 
   act(() => store!.toggleSidebar());
 
   const saved = JSON.parse(localStorage.getItem(KEY)!);
   expect(saved.sidebarCollapsed).toBe(true);
-  // 같은 키를 공유하는 프로필 오버라이드를 훼손하지 않는다.
-  // (게시글은 이 키에 저장되지 않는다 — 서버가 원본이다.)
+  // 같은 키를 공유하는 별명 오버라이드를 훼손하지 않는다.
+  // (게시글·프로필 사진은 이 키에 저장되지 않는다 — 서버가 원본이다.)
   expect(saved.nickname).toBe("김민수");
-  expect(saved.avatar).toBe("data:image/png;base64,AAA");
   expect(saved.posts).toBeUndefined();
 });
 
@@ -105,7 +101,7 @@ test("접힘 상태가 localStorage에 저장된다 (FR-010/SC-004)", () => {
 test("저장된 접힘 상태가 재마운트 시 복원된다 (FR-010/SC-004)", () => {
   localStorage.setItem(
     KEY,
-    JSON.stringify({ posts: [], nickname: null, avatar: null, loggedIn: true, sidebarCollapsed: true })
+    JSON.stringify({ posts: [], nickname: null, loggedIn: true, sidebarCollapsed: true })
   );
 
   const { getByTestId } = renderStore();
@@ -116,7 +112,7 @@ test("저장된 접힘 상태가 재마운트 시 복원된다 (FR-010/SC-004)",
 test("sidebarCollapsed 필드가 없는 기존 저장 데이터는 펼침으로 복원된다", () => {
   localStorage.setItem(
     KEY,
-    JSON.stringify({ posts: [], nickname: null, avatar: null, loggedIn: true })
+    JSON.stringify({ posts: [], nickname: null, loggedIn: true })
   );
 
   const { getByTestId } = renderStore();

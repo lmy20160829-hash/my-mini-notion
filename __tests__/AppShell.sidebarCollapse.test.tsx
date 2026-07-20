@@ -52,14 +52,23 @@ function makeQuery(result: unknown) {
     then: (res: (v: unknown) => unknown, rej: (e: unknown) => unknown) =>
       Promise.resolve(result).then(res, rej),
   };
-  for (const m of ["insert", "select", "order", "update", "delete", "eq", "single"]) {
+  for (const m of [
+    "insert",
+    "select",
+    "order",
+    "update",
+    "delete",
+    "eq",
+    "single",
+    "maybeSingle",
+  ]) {
     q[m] = vi.fn(() => q);
   }
   return q;
 }
 
-// 별명은 로컬 오버라이드로 남아 있다(게시글과 달리 localStorage 저장).
-const SEED = { nickname: "김민수", avatar: null };
+// 별명은 로컬 오버라이드로 남아 있다(게시글·프로필 사진과 달리 localStorage 저장).
+const SEED = { nickname: "김민수" };
 
 // 게시글이 서버에서 비동기로 도착해야 셸이 렌더된다(그 전에는 AppShell이 null).
 // 각 테스트가 동일하게 "셸이 뜬 뒤"를 출발점으로 삼도록 여기서 한 번 기다린다.

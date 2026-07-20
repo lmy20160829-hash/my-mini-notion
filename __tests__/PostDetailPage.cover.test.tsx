@@ -47,7 +47,16 @@ function makeQuery(result: unknown) {
     then: (res: (v: unknown) => unknown, rej: (e: unknown) => unknown) =>
       Promise.resolve(result).then(res, rej),
   };
-  for (const m of ["insert", "select", "order", "update", "delete", "eq", "single"]) {
+  for (const m of [
+    "insert",
+    "select",
+    "order",
+    "update",
+    "delete",
+    "eq",
+    "single",
+    "maybeSingle",
+  ]) {
     q[m] = vi.fn(() => q);
   }
   return q;

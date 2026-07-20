@@ -100,12 +100,17 @@ refetch로 서버 진실에 맞추려 한다.
 멈추면 완전한 백지에 스피너도 타임아웃도 없다. 로그아웃 직후에도 `loaded`가 false로 돌아가
 리다이렉트가 완료될 때까지 백지다.
 
-### A9. 아바타 업로드 크기 제한 없음 (낮음)
+### ~~A9. 아바타 업로드 크기 제한 없음 (낮음)~~ — 해소됨 (2026-07-20)
 
-`app/(app)/mypage/page.tsx`가 어떤 파일이든 data URL로 읽는다. 3MB 사진이면 base64로 ~4MB라
-localStorage 5MB 쿼터를 넘고, `store.tsx`의 빈 `catch {}`가 `QuotaExceededError`를 삼킨다.
-아바타가 적용된 듯 보이다 새로고침하면 사라지고, **그 뒤로 별명·사이드바 상태도 조용히
-저장되지 않는다**. 픽 시점의 크기 검사와 쿼터 초과 시 사용자 알림이 필요하다.
+원래 문제: `app/(app)/mypage/page.tsx`가 어떤 파일이든 data URL로 읽어 localStorage에
+저장했다. 3MB 사진이면 base64로 ~4MB라 5MB 쿼터를 넘고, `store.tsx`의 빈 `catch {}`가
+`QuotaExceededError`를 삼켜 별명·사이드바 상태까지 조용히 저장되지 않았다.
+
+프로필 이미지 Supabase 연동으로 근본 원인이 사라졌다 — 사진은 이제 localStorage가 아니라
+Storage `profile-image` 버킷에 올라가고 경로만 `profile.image_path`에 저장된다.
+`validateImageFile`이 픽 시점에 형식·용량(1byte~5MB)을 검사하고 실패는 알림으로 표면화한다.
+localStorage 스키마에서 `avatar` 필드 자체가 제거됐다(§5.5). 관련: `lib/profile-image.ts`,
+`__tests__/profile-image.test.ts`, `__tests__/MyPage.profileImage.test.tsx`.
 
 ### T1. `AppShell.sidebarCollapse.test.tsx` "펼친 상태로 재마운트" 테스트가 재마운트하지 않음
 

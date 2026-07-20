@@ -33,7 +33,16 @@ function makeQuery(result: Result) {
     then: (res: (v: Result) => unknown, rej: (e: unknown) => unknown) =>
       Promise.resolve(result).then(res, rej),
   };
-  for (const m of ["insert", "select", "order", "update", "delete", "eq", "single"]) {
+  for (const m of [
+    "insert",
+    "select",
+    "order",
+    "update",
+    "delete",
+    "eq",
+    "single",
+    "maybeSingle",
+  ]) {
     q[m] = vi.fn(() => q);
   }
   return q;
@@ -191,7 +200,9 @@ describe("deletePost (US3)", () => {
 
     expect(result.current.posts.map((p) => p.id)).toEqual(["2"]);
     // 초기 조회 + 삭제 = page 테이블 접근 2회(로컬 제거만 하고 끝내면 안 된다).
-    expect(fromMock).toHaveBeenCalledTimes(2);
+    // 세션 확정 시 profile 도 한 번 읽으므로(프로필 사진 경로) 테이블로 걸러 센다.
+    const pageCalls = fromMock.mock.calls.filter((c) => c[0] === "page");
+    expect(pageCalls).toHaveLength(2);
   });
 
   test("서버 삭제가 실패하면 재조회로 복구하고 알린다", async () => {

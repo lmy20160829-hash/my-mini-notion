@@ -10,6 +10,7 @@ import {
   fetchIntroduction,
   saveIntroduction,
 } from "@/lib/profile-sync";
+import { uploadProfileImage } from "@/lib/profile-image";
 import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -21,6 +22,7 @@ export default function MyPage() {
   const [nickDraft, setNickDraft] = useState("");
   const [introDraft, setIntroDraft] = useState("");
   const [saved, setSaved] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const userId = auth.user?.id ?? null;
 
@@ -66,14 +68,36 @@ export default function MyPage() {
     savedTimer.current = setTimeout(() => setSaved(false), 1800);
   };
 
-  const onAvatarPick = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  /**
+   * 사진은 별명·자기소개와 달리 "변경사항 저장"을 기다리지 않고 고르는 즉시 반영된다
+   * (Storage 업로드 → profile.image_path 기록까지 한 번에). 업로드 중에는 버튼을
+   * 잠가 같은 사용자가 여러 파일을 겹쳐 올리는 것을 막는다.
+   */
+  const onAvatarPick = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e.target;
+    const file = input.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === "string") app.setAvatar(reader.result);
-    };
-    reader.readAsDataURL(file);
+    // 같은 파일을 다시 골라도 change 가 발생하도록 값을 비운다.
+    input.value = "";
+
+    if (!userId) {
+      window.alert("로그인이 필요합니다. 다시 로그인해 주세요.");
+      return;
+    }
+
+    setUploading(true);
+    const { imagePath, error } = await uploadProfileImage(
+      userId,
+      file,
+      app.profileImagePath
+    );
+    setUploading(false);
+
+    if (error) {
+      window.alert(error);
+      return;
+    }
+    app.setProfileImagePath(imagePath);
   };
 
   return (
@@ -89,15 +113,16 @@ export default function MyPage() {
           <div className="mypage-avatar-row__body">
             <div className="mypage-avatar-row__name">프로필 이미지</div>
             <div className="mypage-avatar-row__hint">
-              JPG, PNG · 정사각형 이미지를 권장합니다.
+              JPG, PNG · 5MB 이하 정사각형 이미지를 권장합니다.
             </div>
-            <label className="upload-btn">
+            <label className={`upload-btn${uploading ? " is-busy" : ""}`}>
               <ImageIcon size={16} />
-              사진 변경
+              {uploading ? "업로드 중…" : "사진 변경"}
               <input
                 type="file"
                 accept="image/*"
                 onChange={onAvatarPick}
+                disabled={uploading}
                 style={{ display: "none" }}
               />
             </label>

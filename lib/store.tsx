@@ -15,6 +15,7 @@ import {
   insertPost,
   updatePostFields,
 } from "./posts";
+import { fetchImagePath, profileImageUrl } from "./profile-image";
 
 export type Post = {
   id: string;
@@ -23,7 +24,7 @@ export type Post = {
   createdAt: number;
 };
 
-/** 프로필 오버라이드(별명·아바타) 전용 로컬 키. 게시글은 서버(Supabase)에 저장된다. */
+/** 프로필 오버라이드(별명) 전용 로컬 키. 게시글·프로필 사진은 서버(Supabase)에 저장된다. */
 const KEY = "mini-notion-v1";
 
 /** 편집 자동저장 디바운스. 키 입력마다 서버에 쓰지 않기 위한 간격(R7). */
@@ -50,18 +51,21 @@ export function formatDate(ts: number): string {
 type AppState = {
   loaded: boolean;
   posts: Post[];
-  // 로컬 프로필 오버라이드(구글 기본값 위에 덮어씀). 표시는 useProfile이 병합한다.
+  // 프로필 오버라이드(구글 기본값 위에 덮어씀). 표시는 useProfile이 병합한다.
+  // nickname 은 로컬, profileImagePath 는 서버(profile.image_path)에서 온다.
   nickname: string | null;
-  avatar: string | null;
+  profileImagePath: string | null;
   sidebarCollapsed: boolean;
 };
 
 type AppStore = AppState & {
+  /** profileImagePath 에 환경변수 앞부분을 붙인 표시용 URL. 경로가 없으면 null. */
+  profileImageUrl: string | null;
   createPost(title: string): Promise<Post | null>;
   updatePost(id: string, patch: Partial<Pick<Post, "title" | "content">>): void;
   deletePost(id: string): void;
   saveNickname(nick: string): void;
-  setAvatar(dataUrl: string): void;
+  setProfileImagePath(path: string | null): void;
   toggleSidebar(): void;
 };
 
@@ -84,27 +88,27 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     loaded: false,
     posts: [],
     nickname: null,
-    avatar: null,
+    profileImagePath: null,
     sidebarCollapsed: false,
   });
   const [profileLoaded, setProfileLoaded] = useState(false);
 
-  // 프로필 오버라이드만 localStorage에서 1회 로드(게시글은 서버에서 온다).
+  // 별명·UI 환경설정만 localStorage에서 1회 로드(게시글·프로필 사진은 서버에서 온다).
+  // 예전 스키마의 `avatar`(base64 dataURL)는 읽지 않는다 — 남겨 두면 서버에 올린
+  // 새 사진보다 우선해 버려서, 사진을 바꿔도 예전 이미지가 계속 보인다.
   useEffect(() => {
     let nickname: string | null = null;
-    let avatar: string | null = null;
     let sidebarCollapsed = false;
     try {
       const raw = localStorage.getItem(KEY);
       if (raw) {
         const d = JSON.parse(raw);
         nickname = d.nickname || null;
-        avatar = d.avatar || null;
         // 이 기능 이전에 저장된 데이터에는 필드가 없다 → 기본값 "펼침".
         sidebarCollapsed = !!d.sidebarCollapsed;
       }
     } catch {}
-    setState((s) => ({ ...s, nickname, avatar, sidebarCollapsed }));
+    setState((s) => ({ ...s, nickname, sidebarCollapsed }));
     setProfileLoaded(true);
   }, []);
 
@@ -116,12 +120,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         KEY,
         JSON.stringify({
           nickname: state.nickname,
-          avatar: state.avatar,
           sidebarCollapsed: state.sidebarCollapsed,
         })
       );
     } catch {}
-  }, [profileLoaded, state.nickname, state.avatar, state.sidebarCollapsed]);
+  }, [profileLoaded, state.nickname, state.sidebarCollapsed]);
 
   // 세션이 확정되면 내 글을 서버에서 불러온다. 로그아웃되면 비운다.
   // 소유자 격리는 RLS(page_select_own)가 서버에서 강제한다.
@@ -129,15 +132,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (!auth.ready) return;
     if (!userId) {
       // 로그아웃: 게시글뿐 아니라 **프로필 오버라이드도** 비운다.
-      // nickname/avatar 는 useProfile 이 구글 계정 값보다 우선 적용하는 로컬 값이라,
-      // 남겨 두면 같은 브라우저에서 다음 사용자가 이전 사용자의 이름·사진을 보게 된다.
+      // nickname/profileImagePath 는 useProfile 이 구글 계정 값보다 우선 적용하는
+      // 값이라, 남겨 두면 같은 브라우저에서 다음 사용자가 이전 사용자의 이름·사진을 보게 된다.
       // sidebarCollapsed 는 사용자 데이터가 아닌 기기 UI 환경설정이라 유지한다.
       setState((s) => ({
         ...s,
         posts: [],
         loaded: false,
         nickname: null,
-        avatar: null,
+        profileImagePath: null,
       }));
       return;
     }
@@ -153,6 +156,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         notify(errorMessage(e, "게시글을 불러오지 못했습니다."));
       }
     })();
+    // 프로필 사진은 사이드바에도 나오므로 마이 페이지 진입과 무관하게 세션 확정 시 읽는다.
+    // 실패해도 구글 기본 사진으로 폴백되니 알림 없이 넘어간다(내부에서 로깅).
+    void fetchImagePath(userId)
+      .then(({ imagePath }) => {
+        if (!cancelled) setState((s) => ({ ...s, profileImagePath: imagePath }));
+      })
+      .catch((e) => {
+        console.error("[profile] 프로필 이미지 조회 실패:", e);
+      });
     return () => {
       cancelled = true;
     };
@@ -238,8 +250,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setState((s) => ({ ...s, nickname: (nick || "").trim() || null }));
   }, []);
 
-  const setAvatar = useCallback((dataUrl: string) => {
-    setState((s) => ({ ...s, avatar: dataUrl }));
+  // 업로드가 끝난 뒤 마이 페이지가 호출한다. 사이드바 아바타도 같은 상태를 보므로 함께 갱신된다.
+  const setProfileImagePath = useCallback((path: string | null) => {
+    setState((s) => ({ ...s, profileImagePath: path }));
   }, []);
 
   // 단일 토글이 양방향을 담당한다. 함수형 업데이트라 연타해도 최종 상태로 수렴한다.
@@ -249,11 +262,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const store: AppStore = {
     ...state,
+    profileImageUrl: profileImageUrl(state.profileImagePath),
     createPost,
     updatePost,
     deletePost,
     saveNickname,
-    setAvatar,
+    setProfileImagePath,
     toggleSidebar,
   };
 
