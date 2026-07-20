@@ -5,9 +5,11 @@
 -- ============================================================
 
 -- 1) 저장할 컬럼 추가 (이름은 이미 있음 → email, avatar_url 추가)
+--    introduction: 마이 페이지 자기소개(선택 항목, 없으면 null). 최대 200자는 앱에서 제한한다.
 alter table public.profile
   add column if not exists email text,
-  add column if not exists avatar_url text;
+  add column if not exists avatar_url text,
+  add column if not exists introduction text;
 
 -- 2) 사용자당 한 행만 유지.
 --    앱은 upsert(onConflict: user_id) 로 저장하므로 user_id 에 유니크가 필요하다.

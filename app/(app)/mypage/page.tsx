@@ -5,6 +5,11 @@ import { Check, Image as ImageIcon, LogOut, Mail } from "lucide-react";
 import { useApp } from "@/lib/store";
 import { useAuth } from "@/lib/auth";
 import { useProfile } from "@/lib/profile";
+import {
+  INTRODUCTION_MAX_LENGTH,
+  fetchIntroduction,
+  saveIntroduction,
+} from "@/lib/profile-sync";
 import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -14,14 +19,28 @@ export default function MyPage() {
   const auth = useAuth();
   const profile = useProfile();
   const [nickDraft, setNickDraft] = useState("");
+  const [introDraft, setIntroDraft] = useState("");
   const [saved, setSaved] = useState(false);
   const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const userId = auth.user?.id ?? null;
 
   // Fill the draft once profile data is loaded.
   useEffect(() => {
     if (app.loaded) setNickDraft(profile.displayName);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [app.loaded]);
+
+  // 자기소개는 로컬이 아니라 profile 테이블에 있으므로 로그인 사용자가 정해지면 읽어온다.
+  useEffect(() => {
+    if (!userId) return;
+    let cancelled = false;
+    void fetchIntroduction(userId).then(({ introduction }) => {
+      if (!cancelled) setIntroDraft(introduction ?? "");
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
 
   useEffect(() => {
     return () => {
@@ -31,6 +50,8 @@ export default function MyPage() {
 
   const saveProfile = () => {
     app.saveNickname(nickDraft);
+    // 별명과 한 번의 "변경사항 저장"으로 함께 반영된다(같은 저장 완료 표시를 공유).
+    if (userId) void saveIntroduction(userId, introDraft);
     setSaved(true);
     if (savedTimer.current) clearTimeout(savedTimer.current);
     savedTimer.current = setTimeout(() => setSaved(false), 1800);
@@ -82,6 +103,18 @@ export default function MyPage() {
             value={nickDraft}
             onChange={(e) => setNickDraft(e.target.value)}
             placeholder="사용할 별명을 입력하세요"
+          />
+        </div>
+
+        <div className="mypage-field">
+          <label htmlFor="introduction">자기소개</label>
+          <textarea
+            id="introduction"
+            className="field-textarea"
+            value={introDraft}
+            maxLength={INTRODUCTION_MAX_LENGTH}
+            onChange={(e) => setIntroDraft(e.target.value)}
+            placeholder="자신을 간단히 소개해 보세요"
           />
         </div>
 
