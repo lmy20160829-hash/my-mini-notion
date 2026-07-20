@@ -64,3 +64,18 @@ export async function insertPost(title: string, userId: string): Promise<Post> {
   if (error || !data) fail(error, "게시글을 저장하지 못했습니다.");
   return rowToPost(data as PageRow);
 }
+
+/** 게시글 삭제. 소유권은 RLS `page_delete_own`이 서버에서 강제한다. */
+export async function deletePostById(id: string): Promise<void> {
+  const { error } = await getSupabase().from(TABLE).delete().eq("id", id);
+  if (error) fail(error, "게시글을 삭제하지 못했습니다.");
+}
+
+/** 게시글 수정. 소유권은 RLS `page_update_own`이 서버에서 강제한다. */
+export async function updatePostFields(
+  id: string,
+  patch: Partial<Pick<Post, "title" | "content">>
+): Promise<void> {
+  const { error } = await getSupabase().from(TABLE).update(patch).eq("id", id);
+  if (error) fail(error, "게시글을 저장하지 못했습니다.");
+}

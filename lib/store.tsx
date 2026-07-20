@@ -5,10 +5,16 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
 } from "react";
 import { useAuth } from "./auth";
-import { fetchMyPosts, insertPost } from "./posts";
+import {
+  deletePostById,
+  fetchMyPosts,
+  insertPost,
+  updatePostFields,
+} from "./posts";
 
 export type Post = {
   id: string;
@@ -19,6 +25,14 @@ export type Post = {
 
 /** 프로필 오버라이드(별명·아바타) 전용 로컬 키. 게시글은 서버(Supabase)에 저장된다. */
 const KEY = "mini-notion-v1";
+
+/** 편집 자동저장 디바운스. 키 입력마다 서버에 쓰지 않기 위한 간격(R7). */
+const SAVE_DEBOUNCE_MS = 600;
+
+type PendingEdit = {
+  patch: Partial<Pick<Post, "title" | "content">>;
+  timer: ReturnType<typeof setTimeout>;
+};
 
 export function formatDate(ts: number): string {
   const d = new Date(ts);
@@ -142,18 +156,62 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [userId]
   );
 
+  // 편집은 키 입력마다 호출된다. 로컬은 즉시 반영하고 서버 쓰기는 id별로 묶어 보낸다(R7).
+  const pending = useRef(new Map<string, PendingEdit>());
+
+  const flush = useCallback((id: string) => {
+    const entry = pending.current.get(id);
+    if (!entry) return;
+    clearTimeout(entry.timer);
+    pending.current.delete(id);
+    void updatePostFields(id, entry.patch).catch((e) => {
+      notify(errorMessage(e, "변경 사항을 저장하지 못했습니다."));
+    });
+  }, []);
+
   const updatePost = useCallback(
     (id: string, patch: Partial<Pick<Post, "title" | "content">>) => {
       setState((s) => ({
         ...s,
         posts: s.posts.map((p) => (p.id === id ? { ...p, ...patch } : p)),
       }));
+
+      const entry = pending.current.get(id);
+      if (entry) clearTimeout(entry.timer);
+      pending.current.set(id, {
+        patch: { ...entry?.patch, ...patch },
+        timer: setTimeout(() => flush(id), SAVE_DEBOUNCE_MS),
+      });
     },
-    []
+    [flush]
   );
 
+  // 언마운트/이탈 시 대기 중인 편집을 유실하지 않는다.
+  useEffect(() => {
+    const map = pending.current;
+    return () => {
+      for (const id of [...map.keys()]) flush(id);
+    };
+  }, [flush]);
+
+  // 낙관적 제거 후 서버 삭제. 실패하면 재조회로 서버 진실에 맞춰 되돌린다.
   const deletePost = useCallback((id: string) => {
+    // 삭제한 글에 대기 중인 편집 저장이 뒤늦게 날아가지 않도록 취소한다.
+    const entry = pending.current.get(id);
+    if (entry) {
+      clearTimeout(entry.timer);
+      pending.current.delete(id);
+    }
     setState((s) => ({ ...s, posts: s.posts.filter((p) => p.id !== id) }));
+    void deletePostById(id).catch(async (e) => {
+      notify(errorMessage(e, "게시글을 삭제하지 못했습니다."));
+      try {
+        const posts = await fetchMyPosts();
+        setState((s) => ({ ...s, posts }));
+      } catch {
+        // 재조회까지 실패하면 다음 로드에서 정합성이 맞춰진다.
+      }
+    });
   }, []);
 
   const saveNickname = useCallback((nick: string) => {

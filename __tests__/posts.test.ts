@@ -1,10 +1,12 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import {
+  deletePostById,
   fetchMyPosts,
   insertPost,
   newInsertPayload,
   rowToPost,
   sortPosts,
+  updatePostFields,
 } from "@/lib/posts";
 
 // Supabase 클라이언트 목: 실제 { data, error } 구조와 page 행 형태를 그대로 반영한다.
@@ -235,5 +237,51 @@ describe("fetchMyPosts", () => {
   test("data가 null이면 빈 배열", async () => {
     fromMock.mockReturnValue(makeQuery({ data: null, error: null }));
     expect(await fetchMyPosts()).toEqual([]);
+  });
+});
+
+describe("deletePostById", () => {
+  test("id로 DELETE 한다(소유권은 RLS page_delete_own이 강제)", async () => {
+    const q = makeQuery({ data: null, error: null });
+    fromMock.mockReturnValue(q);
+
+    await deletePostById("7");
+
+    expect(fromMock).toHaveBeenCalledWith("page");
+    expect(q.delete).toHaveBeenCalled();
+    expect(q.eq).toHaveBeenCalledWith("id", "7");
+  });
+
+  test("서버 오류면 throw 한다", async () => {
+    fromMock.mockReturnValue(makeQuery({ data: null, error: { message: "삭제 실패" } }));
+    await expect(deletePostById("7")).rejects.toThrow("삭제 실패");
+  });
+});
+
+describe("updatePostFields", () => {
+  test("id로 UPDATE 한다(소유권은 RLS page_update_own이 강제)", async () => {
+    const q = makeQuery({ data: null, error: null });
+    fromMock.mockReturnValue(q);
+
+    await updatePostFields("7", { title: "고친 제목", content: "고친 본문" });
+
+    expect(fromMock).toHaveBeenCalledWith("page");
+    expect(q.update).toHaveBeenCalledWith({
+      title: "고친 제목",
+      content: "고친 본문",
+    });
+    expect(q.eq).toHaveBeenCalledWith("id", "7");
+  });
+
+  test("일부 필드만 patch 할 수 있다", async () => {
+    const q = makeQuery({ data: null, error: null });
+    fromMock.mockReturnValue(q);
+    await updatePostFields("7", { content: "본문만" });
+    expect(q.update).toHaveBeenCalledWith({ content: "본문만" });
+  });
+
+  test("서버 오류면 throw 한다", async () => {
+    fromMock.mockReturnValue(makeQuery({ data: null, error: { message: "수정 실패" } }));
+    await expect(updatePostFields("7", { title: "x" })).rejects.toThrow("수정 실패");
   });
 });
