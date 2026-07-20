@@ -18,6 +18,20 @@ function str(v: unknown): string {
   return typeof v === "string" ? v : "";
 }
 
+/** 자기소개 최대 길이(자). 짧은 소개에 맞춘 기본값 — spec Assumptions. */
+export const INTRODUCTION_MAX_LENGTH = 200;
+
+/**
+ * 자기소개 입력값을 저장 값으로 정규화한다.
+ * 별명(saveNickname)과 동일하게 앞뒤 공백을 제거하고, 남는 게 없으면 null(빈 값)로 본다.
+ * 가운데 줄바꿈은 그대로 두어 여러 줄 소개가 보존된다.
+ */
+export function normalizeIntroduction(value: string): string | null {
+  const trimmed = (value || "").trim();
+  if (!trimmed) return null;
+  return trimmed.slice(0, INTRODUCTION_MAX_LENGTH);
+}
+
 /**
  * 구글 계정(User)에서 profile 테이블에 넣을 값만 뽑아낸다.
  * 순수 함수라 단위 테스트가 쉽다. (로컬 오버라이드는 쓰지 않고, 인증 원본만 저장)
@@ -48,6 +62,49 @@ export async function syncProfileRow(
     .upsert(row, { onConflict: "user_id" });
   if (error) {
     console.error("[profile] 저장 실패:", error.message);
+    return { error: error.message };
+  }
+  return { error: null };
+}
+
+/**
+ * 로그인한 사용자의 자기소개를 읽어온다(마이 페이지 진입 시 1회).
+ * profile 행이 아직 없거나 자기소개가 비어 있으면 null — 둘 다 정상 상태다.
+ */
+export async function fetchIntroduction(
+  userId: string
+): Promise<{ introduction: string | null; error: string | null }> {
+  if (!isSupabaseConfigured) return { introduction: null, error: null };
+  const { data, error } = await getSupabase()
+    .from("profile")
+    .select("introduction")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (error) {
+    console.error("[profile] 자기소개 조회 실패:", error.message);
+    return { introduction: null, error: error.message };
+  }
+  const value = data?.introduction;
+  return { introduction: typeof value === "string" ? value : null, error: null };
+}
+
+/**
+ * 자기소개를 저장한다. upsert 가 아니라 update 를 쓰는 이유:
+ * introduction 컬럼만 건드려 같은 행의 name/email/avatar_url 을 그대로 두기 위함이다.
+ * (profile 행은 로그인 시 syncProfileRow 가 이미 만들어 둔다.)
+ * RLS 의 update 정책(auth.uid() = user_id)이 본인 행만 쓰도록 보장한다.
+ */
+export async function saveIntroduction(
+  userId: string,
+  value: string
+): Promise<{ error: string | null }> {
+  if (!isSupabaseConfigured) return { error: null };
+  const { error } = await getSupabase()
+    .from("profile")
+    .update({ introduction: normalizeIntroduction(value) })
+    .eq("user_id", userId);
+  if (error) {
+    console.error("[profile] 자기소개 저장 실패:", error.message);
     return { error: error.message };
   }
   return { error: null };
