@@ -53,6 +53,7 @@ type AppState = {
   // 로컬 프로필 오버라이드(구글 기본값 위에 덮어씀). 표시는 useProfile이 병합한다.
   nickname: string | null;
   avatar: string | null;
+  sidebarCollapsed: boolean;
 };
 
 type AppStore = AppState & {
@@ -61,6 +62,7 @@ type AppStore = AppState & {
   deletePost(id: string): void;
   saveNickname(nick: string): void;
   setAvatar(dataUrl: string): void;
+  toggleSidebar(): void;
 };
 
 const AppContext = createContext<AppStore | null>(null);
@@ -83,6 +85,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     posts: [],
     nickname: null,
     avatar: null,
+    sidebarCollapsed: false,
   });
   const [profileLoaded, setProfileLoaded] = useState(false);
 
@@ -90,15 +93,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let nickname: string | null = null;
     let avatar: string | null = null;
+    let sidebarCollapsed = false;
     try {
       const raw = localStorage.getItem(KEY);
       if (raw) {
         const d = JSON.parse(raw);
         nickname = d.nickname || null;
         avatar = d.avatar || null;
+        // 이 기능 이전에 저장된 데이터에는 필드가 없다 → 기본값 "펼침".
+        sidebarCollapsed = !!d.sidebarCollapsed;
       }
     } catch {}
-    setState((s) => ({ ...s, nickname, avatar }));
+    setState((s) => ({ ...s, nickname, avatar, sidebarCollapsed }));
     setProfileLoaded(true);
   }, []);
 
@@ -108,10 +114,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     try {
       localStorage.setItem(
         KEY,
-        JSON.stringify({ nickname: state.nickname, avatar: state.avatar })
+        JSON.stringify({
+          nickname: state.nickname,
+          avatar: state.avatar,
+          sidebarCollapsed: state.sidebarCollapsed,
+        })
       );
     } catch {}
-  }, [profileLoaded, state.nickname, state.avatar]);
+  }, [profileLoaded, state.nickname, state.avatar, state.sidebarCollapsed]);
 
   // 세션이 확정되면 내 글을 서버에서 불러온다. 로그아웃되면 비운다.
   // 소유자 격리는 RLS(page_select_own)가 서버에서 강제한다.
@@ -222,6 +232,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setState((s) => ({ ...s, avatar: dataUrl }));
   }, []);
 
+  // 단일 토글이 양방향을 담당한다. 함수형 업데이트라 연타해도 최종 상태로 수렴한다.
+  const toggleSidebar = useCallback(() => {
+    setState((s) => ({ ...s, sidebarCollapsed: !s.sidebarCollapsed }));
+  }, []);
+
   const store: AppStore = {
     ...state,
     createPost,
@@ -229,6 +244,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     deletePost,
     saveNickname,
     setAvatar,
+    toggleSidebar,
   };
 
   return <AppContext.Provider value={store}>{children}</AppContext.Provider>;

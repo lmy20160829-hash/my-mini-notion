@@ -11,6 +11,8 @@ import {
   House,
   LayoutGrid,
   Menu,
+  PanelLeftClose,
+  PanelLeftOpen,
   Plus,
   Search,
   Settings,
@@ -33,6 +35,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [search, setSearch] = useState("");
+  const collapsed = app.sidebarCollapsed;
 
   // Client-side auth guard: bounce to /login when signed out.
   useEffect(() => {
@@ -78,68 +81,106 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </header>
 
       <div className="app-body">
-        <nav className="sidebar">
+        <nav
+          id="app-sidebar"
+          className={`sidebar${collapsed ? " is-collapsed" : ""}`}
+        >
           <div className="sidebar__inner">
+            {/* 단일 토글: 접힘·펼침 양쪽 상태에서 항상 보이며 양방향을 담당한다(FR-004). */}
+            <div className="sidebar__toolbar">
+              <IconButton
+                icon={collapsed ? PanelLeftOpen : PanelLeftClose}
+                title={collapsed ? "사이드바 펼치기" : "사이드바 접기"}
+                ariaExpanded={!collapsed}
+                ariaControls="app-sidebar"
+                onClick={app.toggleSidebar}
+              />
+            </div>
             <SidebarItem
               icon={House}
               label="홈"
               active={pathname === "/"}
               onClick={() => router.push("/")}
             />
-            <div style={{ height: 8 }} />
-            <div className="input-sm">
-              <Search size={14} />
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="글 검색"
-              />
-            </div>
+            {!collapsed && (
+              <>
+                <div style={{ height: 8 }} />
+                <div className="input-sm">
+                  <Search size={14} />
+                  <input
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="글 검색"
+                  />
+                </div>
+              </>
+            )}
             <div style={{ height: 12 }} />
             <div className="sidebar__scroll mn-scroll">
-              <SidebarSection
-                label="내 글"
-                count={app.posts.length}
-                actions={[
-                  { icon: Plus, title: "새 페이지", onClick: () => void newPage() },
-                ]}
-              >
-                {navPosts.map((post) => (
-                  <SidebarItem
-                    key={post.id}
-                    icon={FileText}
-                    label={post.title.trim() || "제목 없음"}
-                    active={pathname === `/posts/${post.id}`}
-                    onClick={() => router.push(`/posts/${post.id}`)}
-                  />
-                ))}
-                {app.posts.length === 0 && (
-                  <div className="sidebar-section__empty">
-                    아직 글이 없어요.
-                  </div>
-                )}
-              </SidebarSection>
-              <div style={{ height: 10 }} />
-              <SidebarSection label="앱">
-                <SidebarItem icon={Calendar} label="캘린더" />
-                <SidebarItem icon={SquareCheck} label="할 일" />
-                <SidebarItem icon={Trash2} label="휴지통" />
-              </SidebarSection>
+              {/* 레일에서는 텍스트 기반 요소(검색·섹션 헤더·"내 글" 목록)를 숨기고
+                  고정 내비 아이콘만 남긴다(FR-007). */}
+              {!collapsed && (
+                <>
+                  <SidebarSection
+                    label="내 글"
+                    count={app.posts.length}
+                    actions={[
+                      { icon: Plus, title: "새 페이지", onClick: () => void newPage() },
+                    ]}
+                  >
+                    {navPosts.map((post) => (
+                      <SidebarItem
+                        key={post.id}
+                        icon={FileText}
+                        label={post.title.trim() || "제목 없음"}
+                        active={pathname === `/posts/${post.id}`}
+                        onClick={() => router.push(`/posts/${post.id}`)}
+                      />
+                    ))}
+                    {app.posts.length === 0 && (
+                      <div className="sidebar-section__empty">
+                        아직 글이 없어요.
+                      </div>
+                    )}
+                  </SidebarSection>
+                  <div style={{ height: 10 }} />
+                </>
+              )}
+              {collapsed ? (
+                <>
+                  <SidebarItem icon={Calendar} label="캘린더" />
+                  <SidebarItem icon={SquareCheck} label="할 일" />
+                  <SidebarItem icon={Trash2} label="휴지통" />
+                </>
+              ) : (
+                <SidebarSection label="앱">
+                  <SidebarItem icon={Calendar} label="캘린더" />
+                  <SidebarItem icon={SquareCheck} label="할 일" />
+                  <SidebarItem icon={Trash2} label="휴지통" />
+                </SidebarSection>
+              )}
             </div>
           </div>
 
           <button
             type="button"
             className="sidebar__profile"
+            title={collapsed ? "마이 페이지" : undefined}
             onClick={() => router.push("/mypage")}
           >
             <Avatar name={profile.displayName} src={profile.avatarUrl} size={28} />
-            <span className="sidebar__profile-body">
-              <span className="sidebar__profile-name">{profile.displayName}</span>
-              <br />
-              <span className="sidebar__profile-sub">마이 페이지</span>
-            </span>
-            <Settings size={16} />
+            {!collapsed && (
+              <>
+                <span className="sidebar__profile-body">
+                  <span className="sidebar__profile-name">
+                    {profile.displayName}
+                  </span>
+                  <br />
+                  <span className="sidebar__profile-sub">마이 페이지</span>
+                </span>
+                <Settings size={16} />
+              </>
+            )}
           </button>
         </nav>
 
