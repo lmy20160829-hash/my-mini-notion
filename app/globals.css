@@ -2,6 +2,9 @@
    ui:bowl design tokens — ported from the design-system project
    ============================================================ */
 :root {
+  /* 라이트가 기본 테마. 다크는 아래 [data-theme="dark"] 스코프에서 시맨틱 토큰만 재정의한다. */
+  color-scheme: light;
+
   /* --- Neutral ramp (graphite) --- */
   --gray-0:   #ffffff;
   --gray-25:  #fbfcfc;
@@ -70,6 +73,12 @@
   --status-warning:   var(--amber-500);
   --status-danger:    var(--red-500);
   --status-favorite:  var(--gold-500);
+  /* 위험 액션의 연한 배경(.detail-delete-btn:hover). 이전에는 #fdeae9 하드코딩. */
+  --danger-soft:      #fdeae9;
+
+  /* Avatar — 프리미티브를 직접 참조하던 값을 토큰화(다크에서 반전이 필요). 라이트 값은 동일. */
+  --avatar-bg:        var(--blue-100);
+  --avatar-fg:        var(--blue-700);
 
   /* Typography */
   --font-sans: var(--font-pretendard), -apple-system, BlinkMacSystemFont,
@@ -101,6 +110,62 @@
 }
 
 /* ============================================================
+   Dark theme — 시맨틱 토큰만 재정의
+   ============================================================
+   프리미티브 램프(--gray-N, --blue-N 등)는 "graphite 밝기 순서"라는 의미를 유지해야 하므로
+   건드리지 않는다. 모든 컴포넌트 규칙이 시맨틱 토큰을 경유하므로, 이 블록 하나로 상단바·
+   사이드바·본문·컨트롤·팝오버가 일관되게 전환된다(FR-003, SC-002).
+   값 출처(단일 원본): specs/003-dark-mode/research.md §R7 · DESIGN.md §1.1.5
+   <html data-theme>는 <head> 인라인 스크립트가 첫 페인트 전에 설정한다(FR-007). */
+[data-theme="dark"] {
+  /* 네이티브 스크롤바·폼 컨트롤도 어두운 테마를 따르게 한다. */
+  color-scheme: dark;
+
+  /* Text — 본문/제목은 --surface-page(#191919) 대비 4.5:1을 크게 상회한다(SC-004). */
+  --text-strong:      #ededed; /* 대비 15.0:1 */
+  --text-body:        #d4d4d4; /* 대비 11.9:1 */
+  --text-secondary:   #a6a6a6; /* 대비  7.2:1 */
+  --text-muted:       #8a8f98; /* 대비  5.4:1 (라이트와 동일 값 유지) */
+  --text-placeholder: #6b7178;
+  --text-link:        #66a9ff; /* 대비  7.3:1 */
+
+  /* Surfaces */
+  --surface-page:     #191919;
+  --surface-sidebar:  #191919;
+  --surface-card:     #242424;
+  --surface-subtle:   #202020;
+  --surface-hover:    #2a2a2a;
+  --surface-active:   #333333;
+  --surface-inverse:  #ededed;
+
+  /* Borders — --border-focus(--blue-500)는 두 테마 공통. */
+  --border-subtle:    #2e2e2e;
+  --border-default:   #3a3a3a;
+  --border-strong:    #4d4d4d;
+
+  /* Accent surfaces — --accent/--accent-active/--text-on-accent는 두 테마 공통. */
+  --accent-hover:     #66a9ff;
+  --accent-soft:      rgba(78, 151, 240, 0.16);
+  --accent-soft-fg:   #93bdf8;
+
+  /* Status는 유지(어두운 배경에서도 대비 충분: danger 4.8:1, success 6.7:1, favorite 고대비). */
+  --danger-soft:      rgba(240, 72, 62, 0.16);
+
+  /* Avatar — 밝은 파랑 칩 대신 반투명 파랑 + 밝은 파랑 이니셜(대비 8.0:1). */
+  --avatar-bg:        rgba(78, 151, 240, 0.24);
+  --avatar-fg:        #93bdf8;
+
+  /* Shadows — rgba(25,25,25,…)는 어두운 배경에서 보이지 않으므로 순수 검정 기준으로
+     동일한 기하(offset/blur)를 유지한 채 깊이만 되살린다. */
+  --shadow-xs:  0 1px 1px rgba(0, 0, 0, 0.4);
+  --shadow-sm:  0 1px 2px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-md:  0 2px 6px rgba(0, 0, 0, 0.5), 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg:  0 8px 24px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.4);
+  /* 포커스 링은 어두운 배경에서 25%로는 잘 보이지 않아 40%로 강화(가시성 향상). */
+  --shadow-focus: 0 0 0 3px rgba(78, 151, 240, 0.4);
+}
+
+/* ============================================================
    Base
    ============================================================ */
 * { box-sizing: border-box; }
@@ -119,10 +184,12 @@ textarea { resize: none; }
 ::selection { background: var(--accent-soft); }
 input::placeholder, textarea::placeholder { color: var(--text-placeholder); }
 
-.mn-scroll { scrollbar-width: thin; scrollbar-color: var(--gray-300) transparent; }
+/* 스크롤바: 프리미티브(--gray-200/300) 직접 참조를 동일 값의 경계선 토큰으로 교체했다.
+   라이트 값은 그대로이고, 다크에서 밝은 thumb가 튀지 않는다. */
+.mn-scroll { scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; }
 .mn-scroll::-webkit-scrollbar { width: 11px; height: 11px; }
-.mn-scroll::-webkit-scrollbar-thumb { background: var(--gray-200); border-radius: 8px; border: 3px solid var(--surface-page); }
-.mn-scroll::-webkit-scrollbar-thumb:hover { background: var(--gray-300); }
+.mn-scroll::-webkit-scrollbar-thumb { background: var(--border-default); border-radius: 8px; border: 3px solid var(--surface-page); }
+.mn-scroll::-webkit-scrollbar-thumb:hover { background: var(--border-strong); }
 
 @keyframes mnPop { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: none; } }
 
@@ -160,14 +227,14 @@ input::placeholder, textarea::placeholder { color: var(--text-placeholder); }
 /* Badge (neutral / sm) */
 .badge {
   display: inline-flex; align-items: center; height: 18px; padding: 0 7px; flex: none;
-  border-radius: var(--radius-pill); background: var(--gray-100);
+  border-radius: var(--radius-pill); background: var(--surface-hover);
   font-size: 11px; font-weight: 600; color: var(--text-secondary); line-height: 1;
 }
 
 /* Avatar */
 .avatar {
   display: inline-flex; align-items: center; justify-content: center; flex: none;
-  border-radius: 50%; background: var(--blue-100); color: var(--blue-700);
+  border-radius: 50%; background: var(--avatar-bg); color: var(--avatar-fg);
   font-weight: 600; overflow: hidden; user-select: none;
 }
 .avatar img { width: 100%; height: 100%; object-fit: cover; }
@@ -219,12 +286,16 @@ input::placeholder, textarea::placeholder { color: var(--text-placeholder); }
 .app-root { height: 100vh; display: flex; flex-direction: column; overflow: hidden; background: var(--surface-page); }
 
 .topbar {
+  position: relative; /* .topbar__theme의 절대 중앙 배치 기준 */
   display: flex; align-items: center; gap: 12px; height: 48px; padding: 0 12px 0 14px;
   border-bottom: 1px solid var(--border-subtle); background: var(--surface-page); flex: none;
 }
+/* 테마 토글: 좌측 워크스페이스 그룹·우측 아이콘 그룹의 폭과 무관하게 상단바 가로 정중앙에
+   놓는다(US1-4). 절대 배치라 플렉스 흐름에 관여하지 않아 기존 레이아웃이 밀리지 않는다. */
+.topbar__theme { position: absolute; left: 50%; transform: translateX(-50%); display: inline-flex; }
 .brand-chip {
   display: inline-flex; align-items: center; justify-content: center;
-  background: var(--gray-900); color: #fff; border-radius: 7px; padding: 3px 8px;
+  background: var(--surface-inverse); color: var(--surface-page); border-radius: 7px; padding: 3px 8px;
   font-size: 12px; font-weight: 700; letter-spacing: -0.02em; flex: none;
 }
 .topbar__workspace { display: flex; align-items: center; gap: 5px; cursor: pointer; color: var(--text-muted); }
@@ -410,7 +481,7 @@ input::placeholder, textarea::placeholder { color: var(--text-placeholder); }
   font-size: 13px; font-weight: 600; color: var(--status-danger); flex: none;
   transition: background var(--dur-fast) var(--ease-standard);
 }
-.detail-delete-btn:hover { background: #fdeae9; }
+.detail-delete-btn:hover { background: var(--danger-soft); }
 
 /* 커버 이미지: 제목 입력창 위 배너. 로딩/표시/실패 상태가 동일 박스를 점유(레이아웃 이동 방지). 장식 요소(aria-hidden). */
 .detail-cover {
@@ -451,7 +522,7 @@ input::placeholder, textarea::placeholder { color: var(--text-placeholder); }
 }
 .detail-meta { display: flex; align-items: center; gap: 7px; margin-bottom: 22px; color: var(--text-muted); }
 .detail-meta span { font-size: 12px; }
-.detail-meta__dot { width: 3px; height: 3px; border-radius: 50%; background: var(--gray-300); flex: none; }
+.detail-meta__dot { width: 3px; height: 3px; border-radius: 50%; background: var(--border-strong); flex: none; }
 .detail-content {
   width: 100%; min-height: 340px; border: none; outline: none; background: transparent;
   font-size: 15px; line-height: 1.75; color: var(--text-body); padding: 0;

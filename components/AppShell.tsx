@@ -24,6 +24,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { IconButton } from "@/components/ui/IconButton";
 import { SidebarItem } from "@/components/ui/SidebarItem";
 import { SidebarSection } from "@/components/ui/SidebarSection";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const app = useApp();
@@ -60,6 +61,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="topbar__workspace">
           <span className="topbar__title">미니 노션</span>
           <ChevronsUpDown size={14} />
+        </div>
+        {/* 상단바 가로 정중앙(절대 배치) — 좌/우 그룹과 독립 (US1, FR-001) */}
+        <div className="topbar__theme">
+          <ThemeToggle />
         </div>
         <div className="topbar__spacer" />
         <div className="topbar__bell">
