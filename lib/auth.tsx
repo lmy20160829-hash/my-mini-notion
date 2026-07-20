@@ -49,7 +49,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const desc = new URLSearchParams(window.location.search).get(
         "error_description"
       );
-      if (desc) setError(decodeURIComponent(desc.replace(/\+/g, " ")));
+      // URLSearchParams.get() 이 퍼센트 디코딩과 '+' → 공백 변환을 이미 끝낸 값을 준다.
+      // 여기서 decodeURIComponent 를 또 걸면 '%' 가 든 메시지에서 URIError 가 나고,
+      // 그 throw 가 아래 onAuthStateChange 등록을 막아 ready 가 영원히 false 가 된다.
+      if (desc) setError(desc);
     }
 
     const supabase = getSupabase();

@@ -5,14 +5,28 @@ import { AppProvider, useApp } from "@/lib/store";
 // 사이드바 접힘/펼침 상태(Sidebar Display State)의 스토어 계약 검증.
 // 실제 스토어와 실제 localStorage(jsdom)를 사용한다 — 목은 인증/서버 경계에만 둔다(헌법 II).
 //
-// 사이드바 상태는 게시글과 무관하게 localStorage에서 복원되므로, 세션 없는 상태로
-// 목킹해 서버 호출을 아예 발생시키지 않고 접힘 상태만 격리해 검증한다.
+// 사이드바를 접는 주체는 **로그인한** 사용자다. 세션 없이 목킹하면 스토어가 이를
+// 로그아웃으로 보고 프로필 오버라이드를 비우므로(별명·아바타 유출 방지), 시나리오에 맞게
+// 세션을 준다. 서버 게시글은 빈 배열로 응답해 접힘 상태만 격리해 본다.
 vi.mock("@/lib/auth", () => ({
-  useAuth: () => ({ ready: true, session: null, user: null }),
+  useAuth: () => ({
+    ready: true,
+    session: { user: { id: "user-1" } },
+    user: { id: "user-1" },
+  }),
 }));
 vi.mock("@/lib/supabase", () => ({
   isSupabaseConfigured: true,
-  getSupabase: () => ({ from: vi.fn() }),
+  getSupabase: () => ({
+    from: () => {
+      const q: Record<string, unknown> = {
+        then: (res: (v: unknown) => unknown) =>
+          Promise.resolve({ data: [], error: null }).then(res),
+      };
+      for (const m of ["select", "order", "eq"]) q[m] = () => q;
+      return q;
+    },
+  }),
 }));
 
 const KEY = "mini-notion-v1";

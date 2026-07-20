@@ -16,6 +16,8 @@ const db = vi.hoisted(() => ({
   row: null as Record<string, unknown> | null,
   selectError: null as { message: string } | null,
   updateError: null as { message: string } | null,
+  // update 가 몇 행에 매칭됐는지. 0이면 프로필 행 없음/RLS 거부(에러 아님).
+  rowsUpdated: 1,
   calls: [] as Call[],
 }));
 
@@ -47,7 +49,18 @@ vi.mock("@/lib/supabase", () => ({
           return {
             eq(column: string, value: unknown) {
               call.filter = [column, value];
-              return Promise.resolve({ error: db.updateError });
+              // PostgREST 처럼 .select() 로 갱신된 행을 돌려준다.
+              // 조건에 맞는 행이 없으면 에러가 아니라 빈 배열이다(db.rowsUpdated=0).
+              return {
+                select: async () => ({
+                  data: db.updateError
+                    ? null
+                    : Array.from({ length: db.rowsUpdated }, () => ({
+                        user_id: value,
+                      })),
+                  error: db.updateError,
+                }),
+              };
             },
           };
         },
@@ -65,6 +78,7 @@ beforeEach(() => {
   db.row = null;
   db.selectError = null;
   db.updateError = null;
+  db.rowsUpdated = 1;
   db.calls = [];
 });
 
@@ -152,6 +166,15 @@ describe("saveIntroduction (US1 등록 / US3 수정·삭제)", () => {
     expect(await saveIntroduction("user-1", "소개")).toEqual({
       error: "network error",
     });
+  });
+
+  // update 는 조건에 맞는 행이 없어도 에러가 아니라 0행으로 끝난다
+  // (프로필 행 없음, 또는 RLS 의 update USING 절이 행을 걸러낸 경우).
+  // 이걸 성공으로 넘기면 아무것도 안 쓰였는데 "저장되었습니다"가 표시된다.
+  test("갱신된 행이 0개면 에러가 없어도 실패로 보고한다", async () => {
+    db.rowsUpdated = 0;
+    const { error } = await saveIntroduction("user-1", "소개");
+    expect(error).toBeTruthy();
   });
 });
 

@@ -93,19 +93,30 @@ export async function fetchIntroduction(
  * introduction 컬럼만 건드려 같은 행의 name/email/avatar_url 을 그대로 두기 위함이다.
  * (profile 행은 로그인 시 syncProfileRow 가 이미 만들어 둔다.)
  * RLS 의 update 정책(auth.uid() = user_id)이 본인 행만 쓰도록 보장한다.
+ *
+ * update 는 조건에 맞는 행이 없어도 **에러가 아니라 0행**으로 끝난다 — 프로필 행이
+ * 아직 없거나(로그인 시 syncProfileRow 가 실패했던 사용자) RLS 가 행을 걸러낸 경우다.
+ * 그대로 두면 아무것도 쓰이지 않았는데 "저장되었습니다"가 표시되므로,
+ * .select() 로 영향받은 행을 돌려받아 0행이면 실패로 보고한다.
  */
 export async function saveIntroduction(
   userId: string,
   value: string
 ): Promise<{ error: string | null }> {
   if (!isSupabaseConfigured) return { error: null };
-  const { error } = await getSupabase()
+  const { data, error } = await getSupabase()
     .from("profile")
     .update({ introduction: normalizeIntroduction(value) })
-    .eq("user_id", userId);
+    .eq("user_id", userId)
+    .select("user_id");
   if (error) {
     console.error("[profile] 자기소개 저장 실패:", error.message);
     return { error: error.message };
+  }
+  if (!Array.isArray(data) || data.length === 0) {
+    const message = "프로필을 찾지 못해 자기소개를 저장하지 못했습니다.";
+    console.error("[profile] 자기소개 저장 실패: 갱신된 행 없음");
+    return { error: message };
   }
   return { error: null };
 }

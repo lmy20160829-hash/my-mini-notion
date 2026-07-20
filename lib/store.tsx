@@ -128,7 +128,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!auth.ready) return;
     if (!userId) {
-      setState((s) => ({ ...s, posts: [], loaded: false }));
+      // 로그아웃: 게시글뿐 아니라 **프로필 오버라이드도** 비운다.
+      // nickname/avatar 는 useProfile 이 구글 계정 값보다 우선 적용하는 로컬 값이라,
+      // 남겨 두면 같은 브라우저에서 다음 사용자가 이전 사용자의 이름·사진을 보게 된다.
+      // sidebarCollapsed 는 사용자 데이터가 아닌 기기 UI 환경설정이라 유지한다.
+      setState((s) => ({
+        ...s,
+        posts: [],
+        loaded: false,
+        nickname: null,
+        avatar: null,
+      }));
       return;
     }
     let cancelled = false;

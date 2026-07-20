@@ -48,10 +48,19 @@ export default function MyPage() {
     };
   }, []);
 
-  const saveProfile = () => {
+  const saveProfile = async () => {
     app.saveNickname(nickDraft);
     // 별명과 한 번의 "변경사항 저장"으로 함께 반영된다(같은 저장 완료 표시를 공유).
-    if (userId) void saveIntroduction(userId, introDraft);
+    // 자기소개는 서버 저장이므로 결과를 기다린다 — 실패했는데 "저장되었습니다"가 뜨면
+    // 사용자는 내용을 잃고도 모른다. 알림 방식은 store 의 오류 처리 관행을 따른다
+    // (정적 SPA라 토스트 인프라가 없다 — DESIGN.md §5.5).
+    if (userId) {
+      const { error } = await saveIntroduction(userId, introDraft);
+      if (error) {
+        window.alert(error);
+        return;
+      }
+    }
     setSaved(true);
     if (savedTimer.current) clearTimeout(savedTimer.current);
     savedTimer.current = setTimeout(() => setSaved(false), 1800);

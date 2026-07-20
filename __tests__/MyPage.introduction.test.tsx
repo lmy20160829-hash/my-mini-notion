@@ -40,13 +40,17 @@ vi.mock("@/lib/supabase", () => {
           return Promise.resolve({ error: null });
         },
         select(columns: string) {
+          // page 테이블 조회(목록)는 빈 결과로 끝낸다 — 이 파일은 프로필만 다룬다.
+          // 지원하지 않으면 스토어가 로드 실패 알림을 띄워, 저장 실패 알림과 구분되지 않는다.
           const chain = {
             eq: (column: string, value: unknown) => {
               void column;
               void value;
               return chain;
             },
+            order: () => Promise.resolve({ data: [], error: null }),
             maybeSingle: async () => {
+              if (table !== "profile") return { data: null, error: null };
               const picked: Record<string, unknown> = {};
               for (const key of columns.split(",")) {
                 picked[key.trim()] = db.row[key.trim()] ?? null;
@@ -56,15 +60,28 @@ vi.mock("@/lib/supabase", () => {
           };
           return chain;
         },
+        // 실제 PostgREST 처럼 동작한다: 조건에 맞는 행이 없으면 에러가 아니라 0행이다.
+        // .select() 를 붙이면 갱신된 행이 돌아오고, 붙이지 않으면 결과만 돌아온다.
         update(payload: Record<string, unknown>) {
-          return {
-            eq: (column: string, value: unknown) => {
-              if (table === "profile" && db.row[column] === value) {
-                Object.assign(db.row, payload);
-              }
-              return Promise.resolve({ error: null });
+          const matched = () => table === "profile" && db.row[column] === value;
+          let column = "";
+          let value: unknown;
+          const result = () => {
+            if (!matched()) return { data: [], error: null };
+            Object.assign(db.row, payload);
+            return { data: [{ ...db.row }], error: null };
+          };
+          const chain = {
+            eq: (c: string, v: unknown) => {
+              column = c;
+              value = v;
+              // .select() 없이 await 하는 호출자도 지원한다.
+              return Object.assign(Promise.resolve(result()), {
+                select: async () => result(),
+              });
             },
           };
+          return chain;
         },
       }),
     }),
@@ -232,4 +249,28 @@ test("자기소개만 저장해도 별명·이메일 등 다른 프로필 값은
   expect(db.row.name).toBe("홍길동");
   expect(db.row.email).toBe("gildong@gmail.com");
   expect(db.row.avatar_url).toBe("https://img/g.png");
+});
+
+// 저장이 실제로 이뤄지지 않았는데 "저장되었습니다"가 뜨면 사용자는 글을 잃고도 모른다.
+// profile 행이 없거나(로그인 시 동기화 실패) RLS 가 거부하면 update 는 0행으로 끝나므로,
+// 그 경우 성공 표시를 내지 않고 store 의 관행대로 알림을 띄워야 한다.
+test("자기소개 저장이 실패하면 저장 완료 표시를 내지 않는다", async () => {
+  const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => {});
+  renderMyPage();
+  const field = await introField("");
+  // 세션이 붙어 실제 저장 경로를 타는지 확인한 뒤에 조작한다.
+  await screen.findByText("gildong@gmail.com");
+
+  // 프로필 행이 사라진 상태 → update 가 어떤 행에도 매칭되지 않는다(0행, 에러 아님).
+  db.row = {};
+  fireEvent.change(field, { target: { value: "저장되지 않을 소개" } });
+  save();
+
+  await waitFor(() =>
+    expect(alertSpy).toHaveBeenCalledWith(
+      "프로필을 찾지 못해 자기소개를 저장하지 못했습니다."
+    )
+  );
+  expect(screen.queryByText("저장되었습니다")).toBeNull();
+  alertSpy.mockRestore();
 });
