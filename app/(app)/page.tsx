@@ -22,10 +22,11 @@ export default function ListPage() {
 
   const showSlash = query.trim().startsWith("/");
 
-  const createPage = (title: string) => {
-    const post = app.createPost(title);
+  // 서버 왕복이 필요하다 — 생성된 행의 실제 id로만 상세로 이동할 수 있다(R5).
+  const createPage = async (title: string) => {
+    const post = await app.createPost(title);
     setQuery("");
-    router.push(`/posts/${post.id}`);
+    if (post) router.push(`/posts/${post.id}`);
   };
 
   const onQueryKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -38,11 +39,11 @@ export default function ListPage() {
     const q = query.trim();
     if (!q) return;
     if (q.toLowerCase().startsWith("/page")) {
-      createPage(q.slice(5).trim());
+      void createPage(q.slice(5).trim());
       return;
     }
     if (q.startsWith("/")) return; // unknown command, wait
-    createPage(q);
+    void createPage(q);
   };
 
   return (
@@ -63,7 +64,7 @@ export default function ListPage() {
             onKeyDown={onQueryKey}
             placeholder="/page 를 입력하거나 할 일을 적어보세요"
           />
-          <Button variant="primary" iconLeft={Plus} onClick={() => createPage("")}>
+          <Button variant="primary" iconLeft={Plus} onClick={() => void createPage("")}>
             새 페이지
           </Button>
         </div>
@@ -74,7 +75,7 @@ export default function ListPage() {
             <button
               type="button"
               className="slash-menu__item"
-              onClick={() => createPage("")}
+              onClick={() => void createPage("")}
             >
               <span className="slash-menu__tile">
                 <FileText size={18} />
