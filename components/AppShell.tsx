@@ -48,9 +48,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       )
     : app.posts;
 
-  const newPage = () => {
-    const post = app.createPost("");
-    router.push(`/posts/${post.id}`);
+  const newPage = async () => {
+    const post = await app.createPost("");
+    if (post) router.push(`/posts/${post.id}`);
   };
 
   return (
@@ -95,14 +95,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <SidebarSection
                 label="내 글"
                 count={app.posts.length}
-                actions={[{ icon: Plus, title: "새 페이지", onClick: newPage }]}
+                actions={[
+                  { icon: Plus, title: "새 페이지", onClick: () => void newPage() },
+                ]}
               >
                 {navPosts.map((post) => (
                   <SidebarItem
                     key={post.id}
                     icon={FileText}
                     label={post.title.trim() || "제목 없음"}
-                    favorite={post.favorite}
                     active={pathname === `/posts/${post.id}`}
                     onClick={() => router.push(`/posts/${post.id}`)}
                   />

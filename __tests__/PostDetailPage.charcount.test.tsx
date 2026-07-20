@@ -16,19 +16,54 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: nav.push, replace: nav.replace }),
 }));
 
-const SEED = {
-  loggedIn: true,
-  nickname: null,
-  avatar: null,
-  posts: [
-    { id: "p1", title: "글 하나", content: "안녕하세요", favorite: false, createdAt: 1 },
-    { id: "p2", title: "글 둘", content: "가나다라마바사", favorite: false, createdAt: 2 },
-  ],
-};
+// 게시글은 Supabase(page 테이블)에서 온다. 인증 세션과 Supabase 응답만 목킹하고
+// 스토어·페이지·컴포넌트는 실제 코드를 사용한다(헌법 II 모킹 규율).
+vi.mock("@/lib/auth", () => ({
+  useAuth: () => ({
+    ready: true,
+    session: { user: { id: "user-1" } },
+    user: { id: "user-1" },
+  }),
+}));
+
+const fromMock = vi.fn();
+vi.mock("@/lib/supabase", () => ({
+  isSupabaseConfigured: true,
+  getSupabase: () => ({ from: fromMock }),
+}));
+
+const ROWS = [
+  {
+    id: "p1",
+    created_at: "2026-07-16T00:00:00.000Z",
+    title: "글 하나",
+    content: "안녕하세요",
+    user_id: "user-1",
+  },
+  {
+    id: "p2",
+    created_at: "2026-07-16T01:00:00.000Z",
+    title: "글 둘",
+    content: "가나다라마바사",
+    user_id: "user-1",
+  },
+];
+
+function makeQuery(result: unknown) {
+  const q: Record<string, unknown> = {
+    then: (res: (v: unknown) => unknown, rej: (e: unknown) => unknown) =>
+      Promise.resolve(result).then(res, rej),
+  };
+  for (const m of ["insert", "select", "order", "update", "delete", "eq", "single"]) {
+    q[m] = vi.fn(() => q);
+  }
+  return q;
+}
 
 beforeEach(() => {
   nav.params = { id: "p1" };
-  localStorage.setItem("mini-notion-v1", JSON.stringify(SEED));
+  fromMock.mockReset();
+  fromMock.mockImplementation(() => makeQuery({ data: ROWS, error: null }));
 });
 afterEach(() => {
   cleanup();
