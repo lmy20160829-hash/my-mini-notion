@@ -20,6 +20,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { useApp } from "@/lib/store";
+import { filterPosts } from "@/lib/search";
 import { useAuth } from "@/lib/auth";
 import { useProfile } from "@/lib/profile";
 import { Avatar } from "@/components/ui/Avatar";
@@ -45,12 +46,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // 인증이 확정되기 전(또는 글 로드 전)에는 아무것도 그리지 않는다.
   if (!auth.ready || !auth.session || !app.loaded) return null;
 
-  const q = search.trim().toLowerCase();
-  const navPosts = q
-    ? app.posts.filter((p) =>
-        (p.title || "제목 없음").toLowerCase().includes(q)
-      )
-    : app.posts;
+  // 사이드바 전용 검색: 제목+본문 substring 필터(§5.8). 빈 입력이면 전체.
+  const searching = search.trim().length > 0;
+  const navPosts = filterPosts(app.posts, search);
 
   const newPage = async () => {
     const post = await app.createPost("");
@@ -123,9 +121,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   고정 내비 아이콘만 남긴다(FR-007). */}
               {!collapsed && (
                 <>
+                  {/* 카운트는 검색 중엔 매치 개수, 평소엔 전체 개수(= navPosts). */}
                   <SidebarSection
                     label="내 글"
-                    count={app.posts.length}
+                    count={navPosts.length}
                     actions={[
                       { icon: Plus, title: "새 페이지", onClick: () => void newPage() },
                     ]}
@@ -139,11 +138,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                         onClick={() => router.push(`/posts/${post.id}`)}
                       />
                     ))}
-                    {app.posts.length === 0 && (
+                    {app.posts.length === 0 ? (
                       <div className="sidebar-section__empty">
                         아직 글이 없어요.
                       </div>
-                    )}
+                    ) : searching && navPosts.length === 0 ? (
+                      <div className="sidebar-section__empty">
+                        검색 결과가 없어요.
+                      </div>
+                    ) : null}
                   </SidebarSection>
                   <div style={{ height: 10 }} />
                 </>
