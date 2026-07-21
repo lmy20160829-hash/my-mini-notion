@@ -109,6 +109,7 @@ describe("createPost (US1)", () => {
       content: "",
       createdAt: Date.parse("2026-07-17T00:00:00.000Z"),
       deletedAt: null,
+      contentDoc: null,
     });
     expect(result.current.posts.map((p) => p.id)).toEqual(["2", "1"]);
   });
@@ -325,6 +326,7 @@ describe("restoreToList (휴지통 복원 반영)", () => {
         content: "",
         createdAt: Date.parse("2026-07-16T00:00:00.000Z"),
         deletedAt: null,
+        contentDoc: null,
       });
     });
 
@@ -360,6 +362,38 @@ describe("updatePost 디바운스 저장 (US4)", () => {
 
       // 연속 입력 3회 → 서버 UPDATE는 1회
       expect(fromMock.mock.calls.length).toBe(callsAfterLoad + 1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  test("contentDoc 패치가 content_doc 컬럼으로 dual-write 된다", async () => {
+    vi.useFakeTimers();
+    try {
+      enqueue({ data: [row(1, "원래 제목")], error: null });
+      const { result } = mountStore();
+      await vi.waitFor(() => expect(result.current.loaded).toBe(true));
+
+      const doc = {
+        type: "doc" as const,
+        content: [
+          { type: "paragraph", content: [{ type: "text", text: "블록 본문" }] },
+        ],
+      };
+      act(() => {
+        result.current.updatePost("1", { content: "블록 본문", contentDoc: doc });
+      });
+
+      enqueue({ data: [{ id: 1 }], error: null });
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(600);
+      });
+
+      const updateQuery = queries[queries.length - 1];
+      expect(updateQuery.update).toHaveBeenCalledWith({
+        content: "블록 본문",
+        content_doc: doc,
+      });
     } finally {
       vi.useRealTimers();
     }

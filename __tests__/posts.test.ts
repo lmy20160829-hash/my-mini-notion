@@ -56,7 +56,28 @@ describe("rowToPost", () => {
       content: "본문",
       createdAt: Date.parse("2026-07-16T03:04:05.000Z"),
       deletedAt: null,
+      contentDoc: null,
     });
+  });
+
+  test("content_doc이 있으면 contentDoc으로, 없으면 null로 매핑한다 (dual-read)", () => {
+    const doc = {
+      type: "doc" as const,
+      content: [
+        { type: "paragraph", content: [{ type: "text", text: "블록" }] },
+      ],
+    };
+    const base = {
+      id: 1,
+      created_at: "2026-07-16T00:00:00.000Z",
+      title: "t",
+      content: "블록",
+      user_id: "u-1",
+      deleted_at: null,
+    };
+    expect(rowToPost({ ...base, content_doc: doc }).contentDoc).toEqual(doc);
+    expect(rowToPost({ ...base, content_doc: null }).contentDoc).toBe(null);
+    expect(rowToPost(base).contentDoc).toBe(null); // 옛 스냅샷·목 호환
   });
 
   test("deleted_at이 있으면 epoch ms로, 없으면 null로 매핑한다", () => {
@@ -166,6 +187,7 @@ describe("insertPost", () => {
       content: "",
       createdAt: Date.parse("2026-07-16T09:00:00.000Z"),
       deletedAt: null,
+      contentDoc: null,
     });
   });
 
@@ -216,6 +238,7 @@ describe("fetchMyPosts", () => {
         content: "b",
         createdAt: Date.parse("2026-07-16T10:00:00.000Z"),
         deletedAt: null,
+        contentDoc: null,
       },
       {
         id: "1",
@@ -223,6 +246,7 @@ describe("fetchMyPosts", () => {
         content: "",
         createdAt: Date.parse("2026-07-15T10:00:00.000Z"),
         deletedAt: null,
+        contentDoc: null,
       },
     ]);
   });
@@ -443,6 +467,22 @@ describe("updatePostFields", () => {
     });
     expect(q.eq).toHaveBeenCalledWith("id", "7");
     expect(q.select).toHaveBeenCalledWith("id");
+  });
+
+  test("contentDoc은 content_doc 컬럼으로 매핑해 dual-write 한다", async () => {
+    const q = makeQuery({ data: [{ id: 7 }], error: null });
+    fromMock.mockReturnValue(q);
+    const doc = {
+      type: "doc" as const,
+      content: [
+        { type: "paragraph", content: [{ type: "text", text: "본문" }] },
+      ],
+    };
+
+    await updatePostFields("7", { content: "본문", contentDoc: doc });
+
+    // 클라이언트 필드명(contentDoc)이 아니라 DB 컬럼명(content_doc)으로 나가야 한다.
+    expect(q.update).toHaveBeenCalledWith({ content: "본문", content_doc: doc });
   });
 
   test("일부 필드만 patch 할 수 있다", async () => {

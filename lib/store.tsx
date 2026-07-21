@@ -17,6 +17,7 @@ import {
   updatePostFields,
 } from "./posts";
 import { fetchImagePath, profileImageUrl } from "./profile-image";
+import type { EditorDoc } from "./editor/doc";
 
 export type Post = {
   id: string;
@@ -25,6 +26,8 @@ export type Post = {
   createdAt: number;
   /** 소프트 삭제 시각(epoch ms). null이면 살아 있는 글, 값이 있으면 휴지통에 있다. */
   deletedAt: number | null;
+  /** 에디터 블록 문서(JSON). null이면 content(플레인)를 textToDoc으로 즉석 변환해 렌더. */
+  contentDoc: EditorDoc | null;
 };
 
 /** 프로필 오버라이드(별명) 전용 로컬 키. 게시글·프로필 사진은 서버(Supabase)에 저장된다. */
@@ -34,7 +37,7 @@ const KEY = "mini-notion-v1";
 const SAVE_DEBOUNCE_MS = 600;
 
 type PendingEdit = {
-  patch: Partial<Pick<Post, "title" | "content">>;
+  patch: Partial<Pick<Post, "title" | "content" | "contentDoc">>;
   timer: ReturnType<typeof setTimeout>;
 };
 
@@ -65,7 +68,7 @@ type AppStore = AppState & {
   /** profileImagePath 에 환경변수 앞부분을 붙인 표시용 URL. 경로가 없으면 null. */
   profileImageUrl: string | null;
   createPost(title: string): Promise<Post | null>;
-  updatePost(id: string, patch: Partial<Pick<Post, "title" | "content">>): void;
+  updatePost(id: string, patch: Partial<Pick<Post, "title" | "content" | "contentDoc">>): void;
   deletePost(id: string): void;
   /** 휴지통에서 복원된 글을 목록에 되넣는다(최신 우선 정렬 유지). `/trash` 화면이 호출한다. */
   restoreToList(post: Post): void;
@@ -207,7 +210,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const updatePost = useCallback(
-    (id: string, patch: Partial<Pick<Post, "title" | "content">>) => {
+    (id: string, patch: Partial<Pick<Post, "title" | "content" | "contentDoc">>) => {
       setState((s) => ({
         ...s,
         posts: s.posts.map((p) => (p.id === id ? { ...p, ...patch } : p)),

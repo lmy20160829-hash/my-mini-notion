@@ -1,5 +1,6 @@
 import { getSupabase } from "./supabase";
 import type { Post } from "./store";
+import type { EditorDoc } from "./editor/doc";
 
 /** 게시글이 저장되는 테이블. 구조는 사용자가 만든 그대로 사용한다(FR-009). */
 const TABLE = "page";
@@ -13,6 +14,12 @@ export type PageRow = {
   user_id: string;
   /** 소프트 삭제 시각. null이면 살아 있는 글, 값이 있으면 휴지통에 있는 글. */
   deleted_at: string | null;
+  /**
+   * 에디터 블록 문서(Tiptap JSON). null이면 아직 블록 편집 이력이 없는 글 —
+   * 렌더는 textToDoc(content)으로 즉석 변환한다(dual-read, 손실 제로 계약).
+   * 옵셔널인 이유: 컬럼 추가(2026-07-21) 이전의 목·스냅샷과의 호환.
+   */
+  content_doc?: EditorDoc | null;
 };
 
 /** 행 → 클라이언트 엔티티. id는 문자열(R2), created_at은 epoch ms(R3). */
@@ -23,6 +30,7 @@ export function rowToPost(row: PageRow): Post {
     content: row.content ?? "",
     createdAt: Date.parse(row.created_at),
     deletedAt: row.deleted_at ? Date.parse(row.deleted_at) : null,
+    contentDoc: row.content_doc ?? null,
   };
 }
 
@@ -131,14 +139,23 @@ export async function restorePost(id: string): Promise<void> {
   ensureAffected(data, "게시글을 찾지 못해 복원하지 못했습니다.");
 }
 
+/** 편집 패치 — 에디터는 content(플레인 projection)와 contentDoc(블록 JSON)을 함께 보낸다. */
+export type PostPatch = Partial<Pick<Post, "title" | "content" | "contentDoc">>;
+
+/** 클라이언트 필드명 → DB 컬럼명 매핑(contentDoc → content_doc). 나머지는 이름이 같다. */
+function toRowPatch(patch: PostPatch): Record<string, unknown> {
+  const { contentDoc, ...rest } = patch;
+  return "contentDoc" in patch ? { ...rest, content_doc: contentDoc } : rest;
+}
+
 /** 게시글 수정. 소유권은 RLS `page_update_own`이 서버에서 강제한다. */
 export async function updatePostFields(
   id: string,
-  patch: Partial<Pick<Post, "title" | "content">>
+  patch: PostPatch
 ): Promise<void> {
   const { data, error } = await getSupabase()
     .from(TABLE)
-    .update(patch)
+    .update(toRowPatch(patch))
     .eq("id", id)
     .select("id");
   if (error) fail(error, "게시글을 저장하지 못했습니다.");
