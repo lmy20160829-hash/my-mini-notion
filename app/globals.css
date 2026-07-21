@@ -733,3 +733,15 @@ input::placeholder, textarea::placeholder { color: var(--text-placeholder); }
 @media (prefers-reduced-motion: reduce) {
   .modal-card { animation: none; }
 }
+
+/* ---------- 에디터 (P1: Tiptap 문단 전용, §4.3·§5.2) ---------- */
+/* 기존 .detail-content(textarea용)를 contentEditable 컨테이너로 재사용하기 위한 보정.
+   문단 여백을 0으로 두어 textarea 시절의 줄 간격(line-height 1.75)과 동일하게 보인다. */
+.detail-content.ProseMirror { outline: none; white-space: pre-wrap; }
+.detail-content p { margin: 0; }
+/* Tiptap Placeholder — 빈 문서의 첫 문단에만 표시. 색은 textarea placeholder와 동일 토큰. */
+.detail-content p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: var(--text-placeholder);
+  float: left; height: 0; pointer-events: none;
+}

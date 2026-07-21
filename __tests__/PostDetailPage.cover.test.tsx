@@ -118,8 +118,12 @@ test("커버가 실패 상태여도 제목·본문 편집이 정상 동작한다
   fireEvent.change(title, { target: { value: "새 제목" } });
   expect(title.value).toBe("새 제목");
 
-  // 본문 편집 가능
-  const content = container.querySelector(".detail-content") as HTMLTextAreaElement;
-  fireEvent.change(content, { target: { value: "새 본문 내용" } });
-  expect(content.value).toBe("새 본문 내용");
+  // 본문 편집 가능 — P1에서 textarea → Tiptap(contentEditable)로 교체됐다.
+  // jsdom에서 ProseMirror 타이핑 시뮬레이션은 신뢰할 수 없어 "편집 가능 상태"를 단언한다.
+  // 편집 → 저장 페이로드 흐름은 PostEditor.test.tsx + store.test.tsx(dual-write)가 지킨다.
+  await waitFor(() => {
+    const content = container.querySelector(".detail-content");
+    expect(content).not.toBeNull();
+    expect(content!.getAttribute("contenteditable")).toBe("true");
+  });
 });

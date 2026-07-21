@@ -4,9 +4,11 @@ import { useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Calendar, ChevronRight, Trash2 } from "lucide-react";
 import { formatDate, useApp } from "@/lib/store";
+import { textToDoc } from "@/lib/editor/doc";
 import { IconButton } from "@/components/ui/IconButton";
 import { CharCount } from "@/components/CharCount";
 import { PostCover } from "@/components/PostCover";
+import { PostEditor, buildEditPatch } from "@/components/editor/PostEditor";
 
 export function PostDetailClient() {
   const app = useApp();
@@ -76,11 +78,13 @@ export function PostDetailClient() {
         <span className="detail-meta__dot" />
         <span>자동 저장됨</span>
       </div>
-      <textarea
-        className="detail-content"
-        value={post.content}
-        onChange={(e) => app.updatePost(post.id, { content: e.target.value })}
+      {/* dual-read: 블록 문서가 있으면 그대로, 없으면 플레인 텍스트를 즉석 변환(§5.2).
+          글이 바뀌면 key 로 remount 해 문서를 갈아끼운다. */}
+      <PostEditor
+        key={post.id}
+        initialDoc={post.contentDoc ?? textToDoc(post.content)}
         placeholder="내용을 입력하세요. 떠오르는 생각, 할 일, 메모를 자유롭게 기록해 보세요."
+        onDocChange={(doc) => app.updatePost(post.id, buildEditPatch(doc))}
       />
       <CharCount text={post.content} />
     </div>
