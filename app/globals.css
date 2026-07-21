@@ -620,3 +620,116 @@ input::placeholder, textarea::placeholder { color: var(--text-placeholder); }
 }
 /* 카드 우측 액션 묶음(복원 · 영구 삭제) */
 .post-card__actions { display: flex; align-items: center; gap: 8px; flex: none; }
+/* ============================================================
+   캘린더 (월 뷰)
+   ============================================================ */
+.calendar-page { max-width: 980px; margin: 0 auto; padding: 36px 28px 72px; }
+.calendar-head { display: flex; align-items: center; gap: 8px; margin-bottom: 18px; }
+.calendar-head__title { margin: 0; font-size: 26px; font-weight: 700; color: var(--text-strong); letter-spacing: -0.02em; }
+.calendar-head__spacer { flex: 1; }
+
+.calendar-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); }
+.calendar-weekdays span {
+  padding: 6px 8px; text-align: center; user-select: none;
+  font-size: 12px; font-weight: 700; letter-spacing: 0.02em; color: var(--text-muted);
+}
+
+.calendar-grid {
+  display: grid; grid-template-columns: repeat(7, 1fr);
+  border-top: 1px solid var(--border-subtle); border-left: 1px solid var(--border-subtle);
+}
+.calendar-cell {
+  display: flex; flex-direction: column; align-items: stretch; gap: 2px;
+  min-height: 96px; min-width: 0; padding: 6px; text-align: left;
+  border-right: 1px solid var(--border-subtle); border-bottom: 1px solid var(--border-subtle);
+  background: var(--surface-page); cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-standard);
+}
+.calendar-cell:hover { background: var(--surface-hover); }
+.calendar-cell__date {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 22px; height: 22px; padding: 0 4px; align-self: flex-start;
+  border-radius: 50%; font-size: 12px; font-weight: 500; color: var(--text-secondary);
+}
+/* 다른 달 채움 칸의 날짜는 흐리게(spec: --text-placeholder). */
+.calendar-cell.is-outside .calendar-cell__date { color: var(--text-placeholder); }
+/* 오늘 칸 강조: 날짜 숫자를 --accent 원형 배지로. */
+.calendar-cell.is-today .calendar-cell__date {
+  background: var(--accent); color: var(--text-on-accent); font-weight: 600;
+}
+
+/* 일정 칩: 색상 점 + 제목 말줄임. 클릭하면 수정 모달. */
+.calendar-chip {
+  display: flex; align-items: center; gap: 5px; width: 100%; height: 20px;
+  padding: 0 6px; border: none; background: none; border-radius: var(--radius-sm);
+  font-size: 12px; color: var(--text-body); cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-standard);
+}
+.calendar-chip:hover { background: var(--surface-hover); }
+.calendar-chip__dot { width: 6px; height: 6px; border-radius: 50%; flex: none; }
+.calendar-chip__title {
+  flex: 1; min-width: 0; text-align: left;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* 색상 5종 → §1.1 토큰 매핑(spec 고정): blue --accent, green --status-success,
+   amber --status-warning, red --status-danger, gray --text-muted. */
+.calendar-chip--blue .calendar-chip__dot { background: var(--accent); }
+.calendar-chip--green .calendar-chip__dot { background: var(--status-success); }
+.calendar-chip--amber .calendar-chip__dot { background: var(--status-warning); }
+.calendar-chip--red .calendar-chip__dot { background: var(--status-danger); }
+.calendar-chip--gray .calendar-chip__dot { background: var(--text-muted); }
+.calendar-more { padding: 0 6px; font-size: 12px; color: var(--text-muted); user-select: none; }
+
+/* ============================================================
+   모달 (일정 추가/수정)
+   ============================================================ */
+/* dim: 라이트 그림자 기준색(25,25,25) 계열. 다크는 순수 검정(다크 그림자와 같은 이유). */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 50;
+  display: flex; align-items: center; justify-content: center; padding: 24px;
+  background: rgba(25, 25, 25, 0.45);
+}
+[data-theme="dark"] .modal-overlay { background: rgba(0, 0, 0, 0.6); }
+.modal-card {
+  width: 440px; max-width: 100%; max-height: calc(100vh - 48px); overflow-y: auto;
+  background: var(--surface-card); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); padding: 24px;
+  animation: mnPop 0.14s var(--ease-out);
+}
+.modal-card__title { margin: 0 0 16px; font-size: 16px; font-weight: 600; color: var(--text-strong); }
+
+.modal-field { margin-bottom: 14px; }
+.modal-field label, .modal-field__legend {
+  display: block; font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px;
+}
+.modal-field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.modal-check {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 14px;
+  font-size: 13px; font-weight: 500; color: var(--text-body); cursor: pointer; user-select: none;
+}
+.modal-check input { accent-color: var(--accent); }
+
+.modal-colors { display: flex; gap: 8px; }
+.modal-color {
+  width: 24px; height: 24px; padding: 0; border: none; border-radius: 50%; cursor: pointer;
+}
+.modal-color.is-selected {
+  box-shadow: 0 0 0 2px var(--surface-card), 0 0 0 4px var(--border-focus);
+}
+/* 칩과 동일한 §1.1 토큰 매핑. */
+.modal-color--blue { background: var(--accent); }
+.modal-color--green { background: var(--status-success); }
+.modal-color--amber { background: var(--status-warning); }
+.modal-color--red { background: var(--status-danger); }
+.modal-color--gray { background: var(--text-muted); }
+
+.modal-footer {
+  display: flex; align-items: center; gap: 12px;
+  margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border-subtle);
+}
+.modal-footer__spacer { flex: 1; }
+
+/* §7 TODO 준수: 새 등장 애니메이션은 reduced-motion 에서 끈다. */
+@media (prefers-reduced-motion: reduce) {
+  .modal-card { animation: none; }
+}

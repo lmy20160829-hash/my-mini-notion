@@ -151,11 +151,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   <div style={{ height: 10 }} />
                 </>
               )}
-              {/* "앱" 섹션: 캘린더·할 일은 아직 만들지 않은 기능(§3.3),
-                  휴지통은 /trash(§4.5)로 이동하는 활성 항목이다. */}
+              {/* "앱" 섹션: 캘린더(/calendar, §4.6)·휴지통(/trash, §4.5)은 활성 항목,
+                  할 일은 아직 만들지 않은 기능이라 비활성으로 표시한다(§3.3). */}
               {collapsed ? (
                 <>
-                  <SidebarItem icon={Calendar} label="캘린더" disabled />
+                  <SidebarItem
+                    icon={Calendar}
+                    label="캘린더"
+                    active={pathname === "/calendar"}
+                    onClick={() => router.push("/calendar")}
+                  />
                   <SidebarItem icon={SquareCheck} label="할 일" disabled />
                   <SidebarItem
                     icon={Trash2}
@@ -166,7 +171,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </>
               ) : (
                 <SidebarSection label="앱">
-                  <SidebarItem icon={Calendar} label="캘린더" disabled />
+                  <SidebarItem
+                    icon={Calendar}
+                    label="캘린더"
+                    active={pathname === "/calendar"}
+                    onClick={() => router.push("/calendar")}
+                  />
                   <SidebarItem icon={SquareCheck} label="할 일" disabled />
                   <SidebarItem
                     icon={Trash2}
