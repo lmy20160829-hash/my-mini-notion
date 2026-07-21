@@ -611,3 +611,12 @@ input::placeholder, textarea::placeholder { color: var(--text-placeholder); }
 .logout-card__body { flex: 1; }
 .logout-card__title { font-size: 14px; font-weight: 600; color: var(--text-strong); }
 .logout-card__desc { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+
+/* ---------- Trash (§4.5) ---------- */
+/* 휴지통 카드 변형: 상세로의 이동이 없어 커서 기본 + 호버 부상 효과 제거 */
+.post-card--trash { cursor: default; }
+.post-card--trash:hover {
+  border-color: var(--border-subtle); box-shadow: var(--shadow-xs); transform: none;
+}
+/* 카드 우측 액션 묶음(복원 · 영구 삭제) */
+.post-card__actions { display: flex; align-items: center; gap: 8px; flex: none; }
