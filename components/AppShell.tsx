@@ -148,18 +148,29 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   <div style={{ height: 10 }} />
                 </>
               )}
-              {/* "앱" 섹션 3종도 아직 만들지 않은 기능이다(§3.3). */}
+              {/* "앱" 섹션: 캘린더·할 일은 아직 만들지 않은 기능(§3.3),
+                  휴지통은 /trash(§4.5)로 이동하는 활성 항목이다. */}
               {collapsed ? (
                 <>
                   <SidebarItem icon={Calendar} label="캘린더" disabled />
                   <SidebarItem icon={SquareCheck} label="할 일" disabled />
-                  <SidebarItem icon={Trash2} label="휴지통" disabled />
+                  <SidebarItem
+                    icon={Trash2}
+                    label="휴지통"
+                    active={pathname === "/trash"}
+                    onClick={() => router.push("/trash")}
+                  />
                 </>
               ) : (
                 <SidebarSection label="앱">
                   <SidebarItem icon={Calendar} label="캘린더" disabled />
                   <SidebarItem icon={SquareCheck} label="할 일" disabled />
-                  <SidebarItem icon={Trash2} label="휴지통" disabled />
+                  <SidebarItem
+                    icon={Trash2}
+                    label="휴지통"
+                    active={pathname === "/trash"}
+                    onClick={() => router.push("/trash")}
+                  />
                 </SidebarSection>
               )}
             </div>

@@ -207,12 +207,12 @@ test("접힌 레일에 고정 내비 항목과 프로필 아바타가 남는다 
     el.getAttribute("title")
   );
   // 미구현 항목은 이름 뒤에 "(준비 중)"이 붙지만, 레일에서 아이콘을 식별하려면
-  // 이름 자체는 반드시 남아 있어야 한다(FR-009).
+  // 이름 자체는 반드시 남아 있어야 한다(FR-009). 휴지통은 /trash 구현으로 활성화됐다.
   expect(labels).toEqual([
     "홈",
     "캘린더 (준비 중)",
     "할 일 (준비 중)",
-    "휴지통 (준비 중)",
+    "휴지통",
   ]);
   expect(sidebar.querySelector(".sidebar__profile .avatar")).not.toBeNull();
 });
