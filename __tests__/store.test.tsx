@@ -42,6 +42,8 @@ function makeQuery(result: Result) {
     "eq",
     "single",
     "maybeSingle",
+    "is",
+    "not",
   ]) {
     q[m] = vi.fn(() => q);
   }
@@ -101,6 +103,7 @@ describe("createPost (US1)", () => {
       title: "새 글",
       content: "",
       createdAt: Date.parse("2026-07-17T00:00:00.000Z"),
+      deletedAt: null,
     });
     expect(result.current.posts.map((p) => p.id)).toEqual(["2", "1"]);
   });

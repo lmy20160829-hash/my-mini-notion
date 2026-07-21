@@ -2,9 +2,12 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 import {
   deletePostById,
   fetchMyPosts,
+  fetchTrashedPosts,
   insertPost,
   newInsertPayload,
+  restorePost,
   rowToPost,
+  softDeletePost,
   sortPosts,
   updatePostFields,
 } from "@/lib/posts";
@@ -25,7 +28,7 @@ function makeQuery(result: Result) {
     then: (res: (v: Result) => unknown, rej: (e: unknown) => unknown) =>
       Promise.resolve(result).then(res, rej),
   };
-  for (const m of ["insert", "select", "order", "update", "delete", "eq", "single"]) {
+  for (const m of ["insert", "select", "order", "update", "delete", "eq", "single", "is", "not"]) {
     q[m] = vi.fn(() => q);
   }
   return q as Record<string, ReturnType<typeof vi.fn>> & Result;
@@ -45,13 +48,28 @@ describe("rowToPost", () => {
         title: "첫 글",
         content: "본문",
         user_id: "u-1",
+        deleted_at: null,
       })
     ).toEqual({
       id: "12",
       title: "첫 글",
       content: "본문",
       createdAt: Date.parse("2026-07-16T03:04:05.000Z"),
+      deletedAt: null,
     });
+  });
+
+  test("deleted_at이 있으면 epoch ms로, 없으면 null로 매핑한다", () => {
+    expect(
+      rowToPost({
+        id: 5,
+        created_at: "2026-07-16T00:00:00.000Z",
+        title: "지운 글",
+        content: "",
+        user_id: "u-1",
+        deleted_at: "2026-07-20T12:00:00.000Z",
+      }).deletedAt
+    ).toBe(Date.parse("2026-07-20T12:00:00.000Z"));
   });
 
   test("title/content가 null이면 빈 문자열로 채운다", () => {
@@ -61,6 +79,7 @@ describe("rowToPost", () => {
       title: null,
       content: null,
       user_id: "u-1",
+      deleted_at: null,
     });
     expect(post.title).toBe("");
     expect(post.content).toBe("");
@@ -73,6 +92,7 @@ describe("rowToPost", () => {
       title: "t",
       content: "c",
       user_id: "u-1",
+      deleted_at: null,
     });
     expect("favorite" in post).toBe(false);
   });
@@ -145,6 +165,7 @@ describe("insertPost", () => {
       title: "새 글",
       content: "",
       createdAt: Date.parse("2026-07-16T09:00:00.000Z"),
+      deletedAt: null,
     });
   });
 
@@ -186,18 +207,22 @@ describe("fetchMyPosts", () => {
     expect(q.order).toHaveBeenCalledWith("created_at", { ascending: false });
     // 사용자 필터를 클라이언트에서 걸지 않는다 — 격리는 RLS(page_select_own)가 강제한다.
     expect(q.eq).not.toHaveBeenCalled();
+    // 휴지통(소프트 삭제) 글은 목록·사이드바에서 제외한다.
+    expect(q.is).toHaveBeenCalledWith("deleted_at", null);
     expect(posts).toEqual([
       {
         id: "2",
         title: "나중 글",
         content: "b",
         createdAt: Date.parse("2026-07-16T10:00:00.000Z"),
+        deletedAt: null,
       },
       {
         id: "1",
         title: "",
         content: "",
         createdAt: Date.parse("2026-07-15T10:00:00.000Z"),
+        deletedAt: null,
       },
     ]);
   });
@@ -255,6 +280,143 @@ describe("deletePostById", () => {
   test("서버 오류면 throw 한다", async () => {
     fromMock.mockReturnValue(makeQuery({ data: null, error: { message: "삭제 실패" } }));
     await expect(deletePostById("7")).rejects.toThrow("삭제 실패");
+  });
+});
+
+describe("softDeletePost (휴지통으로 이동)", () => {
+  test("deleted_at을 현재 시각(ISO)으로 UPDATE 하고 select('id')로 확인한다", async () => {
+    const q = makeQuery({ data: [{ id: 7 }], error: null });
+    fromMock.mockReturnValue(q);
+
+    const before = Date.now();
+    await softDeletePost("7");
+
+    expect(fromMock).toHaveBeenCalledWith("page");
+    const patch = q.update.mock.calls[0][0] as { deleted_at: string };
+    const ts = Date.parse(patch.deleted_at);
+    expect(Number.isFinite(ts)).toBe(true);
+    expect(ts).toBeGreaterThanOrEqual(before);
+    expect(ts).toBeLessThanOrEqual(Date.now());
+    expect(q.eq).toHaveBeenCalledWith("id", "7");
+    expect(q.select).toHaveBeenCalledWith("id");
+  });
+
+  test("서버 오류면 throw 한다", async () => {
+    fromMock.mockReturnValue(
+      makeQuery({ data: null, error: { message: "소프트 삭제 실패" } })
+    );
+    await expect(softDeletePost("7")).rejects.toThrow("소프트 삭제 실패");
+  });
+
+  // RLS가 거부한 UPDATE는 에러가 아니라 0행이다(A2). 조용히 성공으로 넘기면 안 된다.
+  test("영향받은 행이 0개면 throw 한다(A2 계약)", async () => {
+    fromMock.mockReturnValue(makeQuery({ data: [], error: null }));
+    await expect(softDeletePost("7")).rejects.toThrow(
+      "게시글을 찾지 못해 삭제하지 못했습니다."
+    );
+  });
+});
+
+describe("restorePost (휴지통에서 복원)", () => {
+  test("deleted_at을 null로 UPDATE 하고 select('id')로 확인한다", async () => {
+    const q = makeQuery({ data: [{ id: 7 }], error: null });
+    fromMock.mockReturnValue(q);
+
+    await restorePost("7");
+
+    expect(fromMock).toHaveBeenCalledWith("page");
+    expect(q.update).toHaveBeenCalledWith({ deleted_at: null });
+    expect(q.eq).toHaveBeenCalledWith("id", "7");
+    expect(q.select).toHaveBeenCalledWith("id");
+  });
+
+  test("서버 오류면 throw 한다", async () => {
+    fromMock.mockReturnValue(
+      makeQuery({ data: null, error: { message: "복원 실패" } })
+    );
+    await expect(restorePost("7")).rejects.toThrow("복원 실패");
+  });
+
+  test("영향받은 행이 0개면 throw 한다(A2 계약)", async () => {
+    fromMock.mockReturnValue(makeQuery({ data: [], error: null }));
+    await expect(restorePost("7")).rejects.toThrow(
+      "게시글을 찾지 못해 복원하지 못했습니다."
+    );
+  });
+});
+
+describe("fetchTrashedPosts", () => {
+  test("deleted_at이 있는 행만 deleted_at 내림차순으로 조회한다", async () => {
+    const q = makeQuery({
+      data: [
+        {
+          id: 2,
+          created_at: "2026-07-15T00:00:00.000Z",
+          title: "나중에 지운 글",
+          content: "b",
+          user_id: "user-1",
+          deleted_at: "2026-07-20T12:00:00.000Z",
+        },
+        {
+          id: 1,
+          created_at: "2026-07-16T00:00:00.000Z",
+          title: "먼저 지운 글",
+          content: "a",
+          user_id: "user-1",
+          deleted_at: "2026-07-19T12:00:00.000Z",
+        },
+      ],
+      error: null,
+    });
+    fromMock.mockReturnValue(q);
+
+    const posts = await fetchTrashedPosts();
+
+    expect(fromMock).toHaveBeenCalledWith("page");
+    expect(q.select).toHaveBeenCalledWith("*");
+    expect(q.not).toHaveBeenCalledWith("deleted_at", "is", null);
+    expect(q.order).toHaveBeenCalledWith("deleted_at", { ascending: false });
+    expect(posts.map((p) => p.id)).toEqual(["2", "1"]);
+    expect(posts[0].deletedAt).toBe(Date.parse("2026-07-20T12:00:00.000Z"));
+  });
+
+  test("정렬이 흐트러진 응답도 삭제 시각 내림차순으로 정렬한다", async () => {
+    fromMock.mockReturnValue(
+      makeQuery({
+        data: [
+          {
+            id: 1,
+            created_at: "2026-07-16T00:00:00.000Z",
+            title: "먼저 지운 글",
+            content: "",
+            user_id: "user-1",
+            deleted_at: "2026-07-19T12:00:00.000Z",
+          },
+          {
+            id: 2,
+            created_at: "2026-07-15T00:00:00.000Z",
+            title: "나중에 지운 글",
+            content: "",
+            user_id: "user-1",
+            deleted_at: "2026-07-20T12:00:00.000Z",
+          },
+        ],
+        error: null,
+      })
+    );
+    expect((await fetchTrashedPosts()).map((p) => p.id)).toEqual(["2", "1"]);
+  });
+
+  test("서버 오류면 throw 한다", async () => {
+    fromMock.mockReturnValue(
+      makeQuery({ data: null, error: { message: "휴지통 조회 실패" } })
+    );
+    await expect(fetchTrashedPosts()).rejects.toThrow("휴지통 조회 실패");
+  });
+
+  test("data가 null이면 빈 배열", async () => {
+    fromMock.mockReturnValue(makeQuery({ data: null, error: null }));
+    expect(await fetchTrashedPosts()).toEqual([]);
   });
 });
 

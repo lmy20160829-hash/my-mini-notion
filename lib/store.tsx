@@ -22,6 +22,8 @@ export type Post = {
   title: string;
   content: string;
   createdAt: number;
+  /** 소프트 삭제 시각(epoch ms). null이면 살아 있는 글, 값이 있으면 휴지통에 있다. */
+  deletedAt: number | null;
 };
 
 /** 프로필 오버라이드(별명) 전용 로컬 키. 게시글·프로필 사진은 서버(Supabase)에 저장된다. */

@@ -23,7 +23,7 @@ vi.mock("@/lib/supabase", () => ({
         then: (res: (v: unknown) => unknown) =>
           Promise.resolve({ data: [], error: null }).then(res),
       };
-      for (const m of ["select", "order", "eq", "maybeSingle"]) q[m] = () => q;
+      for (const m of ["select", "order", "eq", "maybeSingle", "is", "not"]) q[m] = () => q;
       return q;
     },
   }),

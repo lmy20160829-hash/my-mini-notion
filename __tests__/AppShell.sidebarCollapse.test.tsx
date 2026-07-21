@@ -61,6 +61,8 @@ function makeQuery(result: unknown) {
     "eq",
     "single",
     "maybeSingle",
+    "is",
+    "not",
   ]) {
     q[m] = vi.fn(() => q);
   }
