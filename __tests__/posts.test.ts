@@ -241,8 +241,8 @@ describe("fetchMyPosts", () => {
 });
 
 describe("deletePostById", () => {
-  test("id로 DELETE 한다(소유권은 RLS page_delete_own이 강제)", async () => {
-    const q = makeQuery({ data: null, error: null });
+  test("id로 DELETE 하고 .select로 삭제된 행을 확인한다(A2)", async () => {
+    const q = makeQuery({ data: [{ id: 7 }], error: null });
     fromMock.mockReturnValue(q);
 
     await deletePostById("7");
@@ -250,17 +250,26 @@ describe("deletePostById", () => {
     expect(fromMock).toHaveBeenCalledWith("page");
     expect(q.delete).toHaveBeenCalled();
     expect(q.eq).toHaveBeenCalledWith("id", "7");
+    // RLS 거부는 에러가 아니라 0행이므로, 삭제된 행을 돌려받아야 성공을 안다.
+    expect(q.select).toHaveBeenCalledWith("id");
   });
 
   test("서버 오류면 throw 한다", async () => {
     fromMock.mockReturnValue(makeQuery({ data: null, error: { message: "삭제 실패" } }));
     await expect(deletePostById("7")).rejects.toThrow("삭제 실패");
   });
+
+  test("에러 없이 0행이면(RLS 무성음 거부) 실패로 throw 한다(A2)", async () => {
+    fromMock.mockReturnValue(makeQuery({ data: [], error: null }));
+    await expect(deletePostById("7")).rejects.toThrow(
+      "게시글을 찾지 못해 삭제하지 못했습니다."
+    );
+  });
 });
 
 describe("updatePostFields", () => {
-  test("id로 UPDATE 한다(소유권은 RLS page_update_own이 강제)", async () => {
-    const q = makeQuery({ data: null, error: null });
+  test("id로 UPDATE 하고 .select로 갱신된 행을 확인한다(A2)", async () => {
+    const q = makeQuery({ data: [{ id: 7 }], error: null });
     fromMock.mockReturnValue(q);
 
     await updatePostFields("7", { title: "고친 제목", content: "고친 본문" });
@@ -271,10 +280,11 @@ describe("updatePostFields", () => {
       content: "고친 본문",
     });
     expect(q.eq).toHaveBeenCalledWith("id", "7");
+    expect(q.select).toHaveBeenCalledWith("id");
   });
 
   test("일부 필드만 patch 할 수 있다", async () => {
-    const q = makeQuery({ data: null, error: null });
+    const q = makeQuery({ data: [{ id: 7 }], error: null });
     fromMock.mockReturnValue(q);
     await updatePostFields("7", { content: "본문만" });
     expect(q.update).toHaveBeenCalledWith({ content: "본문만" });
@@ -283,5 +293,12 @@ describe("updatePostFields", () => {
   test("서버 오류면 throw 한다", async () => {
     fromMock.mockReturnValue(makeQuery({ data: null, error: { message: "수정 실패" } }));
     await expect(updatePostFields("7", { title: "x" })).rejects.toThrow("수정 실패");
+  });
+
+  test("에러 없이 0행이면(RLS 무성음 거부) 실패로 throw 한다(A2)", async () => {
+    fromMock.mockReturnValue(makeQuery({ data: [], error: null }));
+    await expect(updatePostFields("7", { title: "x" })).rejects.toThrow(
+      "게시글을 찾지 못해 저장하지 못했습니다."
+    );
   });
 });

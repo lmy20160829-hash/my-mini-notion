@@ -193,7 +193,7 @@ describe("deletePost (US3)", () => {
     const { result } = mountStore();
     await waitFor(() => expect(result.current.loaded).toBe(true));
 
-    enqueue({ data: null, error: null }); // delete 성공
+    enqueue({ data: [{ id: 1 }], error: null }); // delete 성공(.select가 삭제 행 반환)
     await act(async () => {
       result.current.deletePost("1");
     });
@@ -203,6 +203,29 @@ describe("deletePost (US3)", () => {
     // 세션 확정 시 profile 도 한 번 읽으므로(프로필 사진 경로) 테이블로 걸러 센다.
     const pageCalls = fromMock.mock.calls.filter((c) => c[0] === "page");
     expect(pageCalls).toHaveLength(2);
+  });
+
+  test("RLS가 조용히 거부하면(에러 없이 0행) 실패로 알리고 재조회로 복구한다(A2)", async () => {
+    const rows = [
+      row(2, "글 둘", "", "2026-07-17T00:00:00.000Z"),
+      row(1, "글 하나", "", "2026-07-16T00:00:00.000Z"),
+    ];
+    enqueue({ data: rows, error: null });
+    const { result } = mountStore();
+    await waitFor(() => expect(result.current.loaded).toBe(true));
+
+    enqueue({ data: [], error: null }); // RLS 무성음 거부: 에러 없이 0행
+    enqueue({ data: rows, error: null }); // 복구 재조회
+    await act(async () => {
+      result.current.deletePost("1");
+    });
+
+    await waitFor(() =>
+      expect(result.current.posts.map((p) => p.id)).toEqual(["2", "1"])
+    );
+    expect(window.alert).toHaveBeenCalledWith(
+      "게시글을 찾지 못해 삭제하지 못했습니다."
+    );
   });
 
   test("서버 삭제가 실패하면 재조회로 복구하고 알린다", async () => {
@@ -248,7 +271,7 @@ describe("updatePost 디바운스 저장 (US4)", () => {
       // 디바운스 전에는 서버 호출이 없다
       expect(fromMock.mock.calls.length).toBe(callsAfterLoad);
 
-      enqueue({ data: null, error: null });
+      enqueue({ data: [{ id: 1 }], error: null });
       await act(async () => {
         await vi.advanceTimersByTimeAsync(600);
       });
@@ -272,7 +295,7 @@ describe("updatePost 디바운스 저장 (US4)", () => {
         result.current.updatePost("1", { content: "저장돼야 하는 본문" });
       });
 
-      enqueue({ data: null, error: null });
+      enqueue({ data: [{ id: 1 }], error: null });
       unmount();
 
       expect(fromMock.mock.calls.length).toBe(callsAfterLoad + 1);

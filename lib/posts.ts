@@ -65,10 +65,24 @@ export async function insertPost(title: string, userId: string): Promise<Post> {
   return rowToPost(data as PageRow);
 }
 
+/**
+ * RLS가 거부한 UPDATE/DELETE는 에러가 아니라 **0행**으로 끝난다(A2 — USING 절은 행 필터).
+ * `.select()`로 영향받은 행을 돌려받아 0행이면 실패로 던져, 호출부의 롤백·알림 경로가
+ * 실제로 동작하게 한다(saveIntroduction과 같은 방식).
+ */
+function ensureAffected(data: unknown, message: string): void {
+  if (!Array.isArray(data) || data.length === 0) throw new Error(message);
+}
+
 /** 게시글 삭제. 소유권은 RLS `page_delete_own`이 서버에서 강제한다. */
 export async function deletePostById(id: string): Promise<void> {
-  const { error } = await getSupabase().from(TABLE).delete().eq("id", id);
+  const { data, error } = await getSupabase()
+    .from(TABLE)
+    .delete()
+    .eq("id", id)
+    .select("id");
   if (error) fail(error, "게시글을 삭제하지 못했습니다.");
+  ensureAffected(data, "게시글을 찾지 못해 삭제하지 못했습니다.");
 }
 
 /** 게시글 수정. 소유권은 RLS `page_update_own`이 서버에서 강제한다. */
@@ -76,6 +90,11 @@ export async function updatePostFields(
   id: string,
   patch: Partial<Pick<Post, "title" | "content">>
 ): Promise<void> {
-  const { error } = await getSupabase().from(TABLE).update(patch).eq("id", id);
+  const { data, error } = await getSupabase()
+    .from(TABLE)
+    .update(patch)
+    .eq("id", id)
+    .select("id");
   if (error) fail(error, "게시글을 저장하지 못했습니다.");
+  ensureAffected(data, "게시글을 찾지 못해 저장하지 못했습니다.");
 }
