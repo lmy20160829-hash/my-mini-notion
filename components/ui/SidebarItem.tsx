@@ -7,7 +7,7 @@ type SidebarItemProps = {
   icon: LucideIcon;
   label: string;
   active?: boolean;
-  /** 아직 만들지 않은 기능(앱 섹션의 캘린더·할 일·휴지통). */
+  /** 아직 만들지 않은 기능(앱 섹션의 할 일·휴지통). */
   disabled?: boolean;
   onClick?: () => void;
 };

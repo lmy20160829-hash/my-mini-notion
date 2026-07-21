@@ -148,16 +148,27 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   <div style={{ height: 10 }} />
                 </>
               )}
-              {/* "앱" 섹션 3종도 아직 만들지 않은 기능이다(§3.3). */}
+              {/* "앱" 섹션: 캘린더는 구현됨. 할 일·휴지통 2종은 아직 만들지
+                  않은 기능이라 비활성으로 표시한다(§3.3). */}
               {collapsed ? (
                 <>
-                  <SidebarItem icon={Calendar} label="캘린더" disabled />
+                  <SidebarItem
+                    icon={Calendar}
+                    label="캘린더"
+                    active={pathname === "/calendar"}
+                    onClick={() => router.push("/calendar")}
+                  />
                   <SidebarItem icon={SquareCheck} label="할 일" disabled />
                   <SidebarItem icon={Trash2} label="휴지통" disabled />
                 </>
               ) : (
                 <SidebarSection label="앱">
-                  <SidebarItem icon={Calendar} label="캘린더" disabled />
+                  <SidebarItem
+                    icon={Calendar}
+                    label="캘린더"
+                    active={pathname === "/calendar"}
+                    onClick={() => router.push("/calendar")}
+                  />
                   <SidebarItem icon={SquareCheck} label="할 일" disabled />
                   <SidebarItem icon={Trash2} label="휴지통" disabled />
                 </SidebarSection>
