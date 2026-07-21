@@ -72,6 +72,8 @@ function makeQuery(result: unknown) {
     "update",
     "delete",
     "eq",
+    "is",
+    "not",
     "single",
     "maybeSingle",
   ]) {
@@ -109,7 +111,10 @@ function postLabels(container: HTMLElement): (string | null)[] {
         t !== "홈" &&
         t !== "캘린더 (준비 중)" &&
         t !== "할 일 (준비 중)" &&
-        t !== "휴지통 (준비 중)"
+        t !== "휴지통 (준비 중)" &&
+        // 병렬 기능 머지로 활성화된 고정 내비 항목(툴팁에 접미사 없음)도 글이 아니다.
+        t !== "캘린더" &&
+        t !== "휴지통"
     );
 }
 

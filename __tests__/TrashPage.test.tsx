@@ -35,7 +35,7 @@ const routes: Record<"live" | "trash" | "update" | "del", Result> = {
   live: { data: [], error: null },
   trash: { data: [], error: null },
   update: { data: [{ id: 1 }], error: null },
-  del: { data: null, error: null },
+  del: { data: [{ id: 1 }], error: null }, // A2: .select("id")가 삭제 행 반환
 };
 
 /** 생성된 쿼리 목 기록 — update/delete 페이로드 검증용. */
@@ -99,7 +99,7 @@ beforeEach(() => {
   routes.live = { data: [], error: null };
   routes.trash = { data: [], error: null };
   routes.update = { data: [{ id: 1 }], error: null };
-  routes.del = { data: null, error: null };
+  routes.del = { data: [{ id: 1 }], error: null };
   fromMock.mockReset();
   fromMock.mockImplementation(() => makeQuery());
   vi.spyOn(window, "alert").mockImplementation(() => {});
