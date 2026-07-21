@@ -23,7 +23,8 @@ export function PostDetailClient() {
   if (!post) return null;
 
   const handleDelete = () => {
-    if (window.confirm("이 글을 삭제할까요? 삭제하면 되돌릴 수 없어요.")) {
+    // 소프트 삭제 — 휴지통으로 이동하며, /trash 화면에서 복원할 수 있다(§5.3).
+    if (window.confirm("이 글을 휴지통으로 옮길까요? 휴지통에서 복원할 수 있어요.")) {
       app.deletePost(post.id);
       router.push("/");
     }
