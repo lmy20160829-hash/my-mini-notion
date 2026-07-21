@@ -10,9 +10,10 @@ import {
 } from "react";
 import { useAuth } from "./auth";
 import {
-  deletePostById,
   fetchMyPosts,
   insertPost,
+  softDeletePost,
+  sortPosts,
   updatePostFields,
 } from "./posts";
 import { fetchImagePath, profileImageUrl } from "./profile-image";
@@ -22,6 +23,8 @@ export type Post = {
   title: string;
   content: string;
   createdAt: number;
+  /** 소프트 삭제 시각(epoch ms). null이면 살아 있는 글, 값이 있으면 휴지통에 있다. */
+  deletedAt: number | null;
 };
 
 /** 프로필 오버라이드(별명) 전용 로컬 키. 게시글·프로필 사진은 서버(Supabase)에 저장된다. */
@@ -64,6 +67,8 @@ type AppStore = AppState & {
   createPost(title: string): Promise<Post | null>;
   updatePost(id: string, patch: Partial<Pick<Post, "title" | "content">>): void;
   deletePost(id: string): void;
+  /** 휴지통에서 복원된 글을 목록에 되넣는다(최신 우선 정렬 유지). `/trash` 화면이 호출한다. */
+  restoreToList(post: Post): void;
   saveNickname(nick: string): void;
   setProfileImagePath(path: string | null): void;
   toggleSidebar(): void;
@@ -226,7 +231,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     };
   }, [flush]);
 
-  // 낙관적 제거 후 서버 삭제. 실패하면 재조회로 서버 진실에 맞춰 되돌린다.
+  // 낙관적 제거 후 서버에 소프트 삭제(deleted_at 마킹 — 휴지통 이동).
+  // 실패하면 재조회로 서버 진실에 맞춰 되돌린다. 영구 삭제는 /trash 화면에서만 한다.
   const deletePost = useCallback((id: string) => {
     // 삭제한 글에 대기 중인 편집 저장이 뒤늦게 날아가지 않도록 취소한다.
     const entry = pending.current.get(id);
@@ -235,7 +241,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       pending.current.delete(id);
     }
     setState((s) => ({ ...s, posts: s.posts.filter((p) => p.id !== id) }));
-    void deletePostById(id).catch(async (e) => {
+    void softDeletePost(id).catch(async (e) => {
       notify(errorMessage(e, "게시글을 삭제하지 못했습니다."));
       try {
         const posts = await fetchMyPosts();
@@ -244,6 +250,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         // 재조회까지 실패하면 다음 로드에서 정합성이 맞춰진다.
       }
     });
+  }, []);
+
+  // 휴지통 복원 성공 후 /trash 화면이 호출한다. 서버는 이미 복원됐으므로 로컬만 맞춘다.
+  const restoreToList = useCallback((post: Post) => {
+    setState((s) => ({
+      ...s,
+      posts: sortPosts([
+        { ...post, deletedAt: null },
+        ...s.posts.filter((p) => p.id !== post.id),
+      ]),
+    }));
   }, []);
 
   const saveNickname = useCallback((nick: string) => {
@@ -266,6 +283,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     createPost,
     updatePost,
     deletePost,
+    restoreToList,
     saveNickname,
     setProfileImagePath,
     toggleSidebar,

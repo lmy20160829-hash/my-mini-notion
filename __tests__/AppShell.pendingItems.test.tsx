@@ -4,7 +4,8 @@ import { AppProvider } from "@/lib/store";
 import { ThemeProvider } from "@/lib/theme";
 import { AppShell } from "@/components/AppShell";
 
-// 아직 만들지 않은 셸 요소(상단바 5종 + 사이드바 "앱" 3종)가 **비활성으로 보이는지** 검증한다.
+// 아직 만들지 않은 셸 요소(상단바 5종 + 사이드바 "앱" 2종)가 **비활성으로 보이는지** 검증한다.
+// ("휴지통"은 /trash 구현과 함께 활성화됐다 — 아래 "동작하는 항목" 테스트에서 검증.)
 // 이 테스트가 있는 이유: 이전에는 onClick 만 빼고 겉모습은 눌리는 버튼 그대로여서,
 // 사용자가 두 번이나 "작동하지 않는다"고 고장으로 신고했다. 장식이라는 사실이
 // 화면에 드러나지 않으면 그건 장식이 아니라 버그로 읽힌다.
@@ -36,14 +37,14 @@ function makeQuery(result: unknown) {
     then: (res: (v: unknown) => unknown, rej: (e: unknown) => unknown) =>
       Promise.resolve(result).then(res, rej),
   };
-  for (const m of ["insert", "select", "order", "update", "delete", "eq", "single", "maybeSingle"]) {
+  for (const m of ["insert", "select", "order", "update", "delete", "eq", "single", "maybeSingle", "is", "not"]) {
     q[m] = vi.fn(() => q);
   }
   return q;
 }
 
-/** 상단바 5종 + "앱" 섹션 3종 = 미구현 8개. */
-const PENDING = ["알림", "검색", "도움말", "앱", "메뉴", "캘린더", "할 일", "휴지통"];
+/** 상단바 5종 + "앱" 섹션 2종(캘린더·할 일) = 미구현 7개. */
+const PENDING = ["알림", "검색", "도움말", "앱", "메뉴", "캘린더", "할 일"];
 
 async function renderShell() {
   const result = render(
@@ -85,7 +86,7 @@ afterEach(() => {
   localStorage.clear();
 });
 
-test("미구현 8종이 모두 aria-disabled 로 노출된다", async () => {
+test("미구현 7종이 모두 aria-disabled 로 노출된다", async () => {
   await renderShell();
 
   for (const name of PENDING) {
@@ -137,4 +138,33 @@ test("동작하는 항목(홈·프로필·사이드바 토글·테마)은 비활
   const toggle = screen.getByRole("button", { name: /사이드바 (접기|펼치기)/ });
   expect(toggle.getAttribute("aria-disabled")).toBeNull();
   expect(toggle.className).not.toContain("is-disabled");
+});
+
+// 휴지통은 /trash 구현과 함께 활성화됐다 — 더는 "(준비 중)"이 아니다.
+test("휴지통은 활성 항목으로 /trash 로 이동한다", async () => {
+  const { container } = await renderShell();
+
+  // 툴팁에 "(준비 중)" 접미사가 붙지 않는다.
+  expect(
+    document.querySelector('button[title="휴지통 (준비 중)"]')
+  ).toBeNull();
+
+  const trash = container.querySelector<HTMLButtonElement>(
+    '.sidebar-item[title="휴지통"]'
+  )!;
+  expect(trash).not.toBeNull();
+  expect(trash.getAttribute("aria-disabled")).toBeNull();
+  expect(trash.className).not.toContain("is-disabled");
+
+  fireEvent.click(trash);
+  expect(nav.pushed).toContain("/trash");
+});
+
+// /trash 에 있을 때 사이드바 휴지통 항목이 활성 표시된다.
+test("pathname이 /trash 면 휴지통 항목에 is-active 가 붙는다", async () => {
+  nav.pathname = "/trash";
+  const { container } = await renderShell();
+
+  const trash = container.querySelector('.sidebar-item[title="휴지통"]')!;
+  expect(trash.className).toContain("is-active");
 });

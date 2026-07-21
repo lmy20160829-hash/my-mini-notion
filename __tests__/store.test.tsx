@@ -27,6 +27,8 @@ vi.mock("@/lib/supabase", () => ({
 type Result = { data?: unknown; error?: unknown };
 
 let queue: Result[] = [];
+/** 생성된 쿼리 빌더 목 기록 — 어떤 체이닝(update/delete)이 호출됐는지 검증할 때 쓴다. */
+let queries: Array<Record<string, ReturnType<typeof vi.fn>>> = [];
 
 function makeQuery(result: Result) {
   const q: Record<string, unknown> = {
@@ -42,6 +44,8 @@ function makeQuery(result: Result) {
     "eq",
     "single",
     "maybeSingle",
+    "is",
+    "not",
   ]) {
     q[m] = vi.fn(() => q);
   }
@@ -59,10 +63,13 @@ function row(id: number, title: string, content = "", createdAt = "2026-07-16T00
 
 beforeEach(() => {
   queue = [];
+  queries = [];
   fromMock.mockReset();
-  fromMock.mockImplementation(() =>
-    makeQuery(queue.shift() ?? { data: [], error: null })
-  );
+  fromMock.mockImplementation(() => {
+    const q = makeQuery(queue.shift() ?? { data: [], error: null });
+    queries.push(q as Record<string, ReturnType<typeof vi.fn>>);
+    return q;
+  });
   auth.state = {
     ready: true,
     session: { user: { id: "user-1" } },
@@ -101,6 +108,7 @@ describe("createPost (US1)", () => {
       title: "새 글",
       content: "",
       createdAt: Date.parse("2026-07-17T00:00:00.000Z"),
+      deletedAt: null,
     });
     expect(result.current.posts.map((p) => p.id)).toEqual(["2", "1"]);
   });
@@ -187,22 +195,29 @@ describe("세션 변화에 따른 목록 격리 (US2)", () => {
   });
 });
 
-describe("deletePost (US3)", () => {
-  test("로컬에서 즉시 제거하고 서버에 삭제를 요청한다", async () => {
+describe("deletePost (US3 — 소프트 삭제)", () => {
+  test("로컬에서 즉시 제거하고 서버에는 DELETE가 아니라 deleted_at UPDATE를 보낸다", async () => {
     enqueue({ data: [row(1, "글 하나"), row(2, "글 둘")], error: null });
     const { result } = mountStore();
     await waitFor(() => expect(result.current.loaded).toBe(true));
 
-    enqueue({ data: [{ id: 1 }], error: null }); // delete 성공(.select가 삭제 행 반환)
+    enqueue({ data: [{ id: 1 }], error: null }); // 소프트 삭제 성공(A2 — 영향 행 반환)
     await act(async () => {
       result.current.deletePost("1");
     });
 
     expect(result.current.posts.map((p) => p.id)).toEqual(["2"]);
-    // 초기 조회 + 삭제 = page 테이블 접근 2회(로컬 제거만 하고 끝내면 안 된다).
+    // 초기 조회 + 소프트 삭제 = page 테이블 접근 2회(로컬 제거만 하고 끝내면 안 된다).
     // 세션 확정 시 profile 도 한 번 읽으므로(프로필 사진 경로) 테이블로 걸러 센다.
     const pageCalls = fromMock.mock.calls.filter((c) => c[0] === "page");
     expect(pageCalls).toHaveLength(2);
+
+    // 하드 DELETE가 아니라 deleted_at 마킹(휴지통 이동)이어야 한다.
+    const deleteQuery = queries[queries.length - 1];
+    expect(deleteQuery.delete).not.toHaveBeenCalled();
+    const patch = deleteQuery.update.mock.calls[0][0] as { deleted_at: string };
+    expect(Number.isFinite(Date.parse(patch.deleted_at))).toBe(true);
+    expect(deleteQuery.select).toHaveBeenCalledWith("id");
   });
 
   test("RLS가 조용히 거부하면(에러 없이 0행) 실패로 알리고 재조회로 복구한다(A2)", async () => {
@@ -237,7 +252,7 @@ describe("deletePost (US3)", () => {
     const { result } = mountStore();
     await waitFor(() => expect(result.current.loaded).toBe(true));
 
-    enqueue({ data: null, error: { message: "삭제 실패" } }); // delete 거부
+    enqueue({ data: null, error: { message: "삭제 실패" } }); // update 거부
     enqueue({ data: rows, error: null }); // 복구 재조회
     await act(async () => {
       result.current.deletePost("1");
@@ -247,6 +262,73 @@ describe("deletePost (US3)", () => {
       expect(result.current.posts.map((p) => p.id)).toEqual(["2", "1"])
     );
     expect(window.alert).toHaveBeenCalledWith("삭제 실패");
+  });
+
+  // RLS 거부는 에러가 아니라 0행으로 온다(A2). 0행도 실패로 보고 롤백해야 한다.
+  test("영향받은 행이 0개면(RLS 거부) 실패로 보고 재조회로 복구한다", async () => {
+    const rows = [row(1, "남의 글")];
+    enqueue({ data: rows, error: null });
+    const { result } = mountStore();
+    await waitFor(() => expect(result.current.loaded).toBe(true));
+
+    enqueue({ data: [], error: null }); // UPDATE 0행 — 에러 없이 거부됨
+    enqueue({ data: rows, error: null }); // 복구 재조회
+    await act(async () => {
+      result.current.deletePost("1");
+    });
+
+    await waitFor(() =>
+      expect(result.current.posts.map((p) => p.id)).toEqual(["1"])
+    );
+    expect(window.alert).toHaveBeenCalledWith(
+      "게시글을 찾지 못해 삭제하지 못했습니다."
+    );
+  });
+});
+
+describe("restoreToList (휴지통 복원 반영)", () => {
+  test("복원한 글을 목록에 최신 우선 정렬로 되넣는다", async () => {
+    enqueue({
+      data: [
+        row(3, "최신 글", "", "2026-07-18T00:00:00.000Z"),
+        row(1, "오래된 글", "", "2026-07-15T00:00:00.000Z"),
+      ],
+      error: null,
+    });
+    const { result } = mountStore();
+    await waitFor(() => expect(result.current.loaded).toBe(true));
+
+    act(() => {
+      result.current.restoreToList({
+        id: "2",
+        title: "복원한 글",
+        content: "",
+        createdAt: Date.parse("2026-07-16T00:00:00.000Z"),
+        deletedAt: Date.parse("2026-07-20T00:00:00.000Z"),
+      });
+    });
+
+    // createdAt 내림차순 자리(3 > 2 > 1)로 들어가고, deletedAt은 비워진다.
+    expect(result.current.posts.map((p) => p.id)).toEqual(["3", "2", "1"]);
+    expect(result.current.posts[1].deletedAt).toBe(null);
+  });
+
+  test("같은 id가 이미 있으면 중복으로 쌓지 않는다", async () => {
+    enqueue({ data: [row(1, "글 하나")], error: null });
+    const { result } = mountStore();
+    await waitFor(() => expect(result.current.loaded).toBe(true));
+
+    act(() => {
+      result.current.restoreToList({
+        id: "1",
+        title: "글 하나",
+        content: "",
+        createdAt: Date.parse("2026-07-16T00:00:00.000Z"),
+        deletedAt: null,
+      });
+    });
+
+    expect(result.current.posts.map((p) => p.id)).toEqual(["1"]);
   });
 });
 
