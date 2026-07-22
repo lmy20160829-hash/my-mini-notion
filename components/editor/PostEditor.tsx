@@ -7,6 +7,9 @@ import Text from "@tiptap/extension-text";
 import HardBreak from "@tiptap/extension-hard-break";
 import { Placeholder, UndoRedo } from "@tiptap/extensions";
 import { docToText, type EditorDoc } from "@/lib/editor/doc";
+import { MARKS } from "@/lib/editor/marks";
+import { NODES } from "@/lib/editor/nodes";
+import { MEDIA_NODES, mediaEditorProps } from "@/lib/editor/media-nodes";
 
 /**
  * 저장 페이로드 계약(dual-write): 블록 JSON과 함께 플레인 projection을 항상 보낸다 —
@@ -34,6 +37,8 @@ export function PostEditor({
   const editor = useEditor({
     // SSR/프리렌더 하이드레이션 불일치 방지 — 클라이언트 마운트 후 렌더.
     immediatelyRender: false,
+    // 결합부 — 워크트리는 이 배열이 아니라 각자의 소유 파일(marks/nodes/media-nodes)에
+    // 확장을 추가한다(오버뷰 스펙 §파일 소유권). 이 블록은 P2 동안 수정 금지.
     extensions: [
       Document,
       Paragraph,
@@ -41,11 +46,16 @@ export function PostEditor({
       HardBreak,
       UndoRedo,
       Placeholder.configure({ placeholder }),
+      ...MARKS,
+      ...NODES,
+      ...MEDIA_NODES,
     ],
     content: initialDoc,
     editorProps: {
       // 기존 textarea가 쓰던 .detail-content 스타일을 그대로 입는다(§4.3).
       attributes: { class: "detail-content", "aria-label": "본문" },
+      // wt3의 handleDrop/handlePaste 연결점(§5.13).
+      ...mediaEditorProps,
     },
     onUpdate: ({ editor: e }) => onDocChange(e.getJSON() as EditorDoc),
   });
