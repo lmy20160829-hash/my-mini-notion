@@ -808,3 +808,50 @@ hr.blk-hr.ProseMirror-selectednode { border-top-color: var(--border-focus); }
 @media (prefers-reduced-motion: reduce) {
   .blk-toggle__btn svg { transition: none; }
 }
+
+/* ============================================================
+   wt2 ③ 드래그 핸들 .handle-* (DESIGN.md §2.12)
+   블록 hover 시 왼쪽 여백의 ⋮⋮ 핸들 + 클릭 메뉴(§2.7.8 슬래시 메뉴 카드 토큰).
+   ============================================================ */
+.handle-wrap { position: absolute; z-index: 20; }
+.handle-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px; padding: 0;
+  border: none; background: none; border-radius: var(--radius-sm);
+  color: var(--text-placeholder); cursor: grab;
+  transition: background var(--dur-fast) var(--ease-standard),
+    color var(--dur-fast) var(--ease-standard);
+}
+.handle-btn:hover { color: var(--text-muted); background: var(--surface-hover); }
+.handle-wrap[data-dragging="true"] .handle-btn { cursor: grabbing; }
+
+.handle-menu {
+  position: absolute; top: calc(100% + 6px); left: 0; width: 180px;
+  background: var(--surface-card); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg); box-shadow: var(--shadow-lg);
+  padding: 6px; z-index: 20;
+  animation: mnPop 0.14s var(--ease-out);
+}
+.handle-menu__group {
+  padding: 6px 10px 4px; font-size: 11px; font-weight: 700;
+  color: var(--text-muted); letter-spacing: 0.02em;
+}
+.handle-menu__item {
+  display: flex; align-items: center; width: 100%; padding: 6px 10px;
+  border: none; background: none; border-radius: var(--radius-md);
+  font-size: 13px; font-weight: 500; color: var(--text-body);
+  text-align: left; cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-standard);
+}
+.handle-menu__item:hover, .handle-menu__item:focus-visible {
+  background: var(--surface-hover); outline: none;
+}
+.handle-menu__item--danger { color: var(--status-danger); }
+.handle-menu__item--danger:hover, .handle-menu__item--danger:focus-visible {
+  background: var(--danger-soft);
+}
+
+/* §7 TODO 준수: 메뉴 등장(mnPop)은 reduced-motion에서 끈다. */
+@media (prefers-reduced-motion: reduce) {
+  .handle-menu { animation: none; }
+}

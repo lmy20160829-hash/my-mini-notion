@@ -10,6 +10,7 @@ import { docToText, type EditorDoc } from "@/lib/editor/doc";
 import { MARKS } from "@/lib/editor/marks";
 import { NODES } from "@/lib/editor/nodes";
 import { MEDIA_NODES, mediaEditorProps } from "@/lib/editor/media-nodes";
+import { EditorDragHandle } from "@/components/editor/DragHandle";
 
 /**
  * 저장 페이로드 계약(dual-write): 블록 JSON과 함께 플레인 projection을 항상 보낸다 —
@@ -60,5 +61,12 @@ export function PostEditor({
     onUpdate: ({ editor: e }) => onDocChange(e.getJSON() as EditorDoc),
   });
 
-  return <EditorContent editor={editor} />;
+  return (
+    <>
+      <EditorContent editor={editor} />
+      {/* 드래그 핸들(wt2 ③, §2.12) — 결합부 대신 EditorContent 형제로 부착.
+          확장 플러그인은 컴포넌트가 스스로 등록·해제한다. */}
+      <EditorDragHandle editor={editor} />
+    </>
+  );
 }
