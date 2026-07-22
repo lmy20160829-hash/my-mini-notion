@@ -802,3 +802,14 @@ input::placeholder, textarea::placeholder { color: var(--text-placeholder); }
 @media (prefers-reduced-motion: reduce) {
   .slash2-menu { animation: none; }
 }
+
+/* ---------- wt1 ⑨: 페이지 템플릿 행 .tpl-* (§5.11, 파일 끝 추가) ---------- */
+/* 빈 글 상세 진입 시 본문 위 버튼 줄 — Button secondary(§2.1) 재사용. */
+.tpl-row {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  margin-bottom: 14px;
+  animation: mnPop 0.14s var(--ease-out);
+}
+@media (prefers-reduced-motion: reduce) {
+  .tpl-row { animation: none; }
+}

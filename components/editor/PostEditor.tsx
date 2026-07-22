@@ -12,6 +12,7 @@ import { NODES } from "@/lib/editor/nodes";
 import { MEDIA_NODES, mediaEditorProps } from "@/lib/editor/media-nodes";
 import { FormatToolbar } from "@/components/editor/FormatToolbar";
 import { SlashMenu } from "@/components/editor/SlashMenu";
+import { TemplatePicker } from "@/components/editor/TemplatePicker";
 
 /**
  * 저장 페이로드 계약(dual-write): 블록 JSON과 함께 플레인 projection을 항상 보낸다 —
@@ -67,6 +68,7 @@ export function PostEditor({
     <>
       <FormatToolbar editor={editor} />
       <SlashMenu editor={editor} />
+      <TemplatePicker editor={editor} initialDoc={initialDoc} />
       <EditorContent editor={editor} />
     </>
   );
