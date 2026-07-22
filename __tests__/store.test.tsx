@@ -110,6 +110,7 @@ describe("createPost (US1)", () => {
       createdAt: Date.parse("2026-07-17T00:00:00.000Z"),
       deletedAt: null,
       contentDoc: null,
+      parentId: null,
     });
     expect(result.current.posts.map((p) => p.id)).toEqual(["2", "1"]);
   });

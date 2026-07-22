@@ -20,6 +20,11 @@ export type PageRow = {
    * 옵셔널인 이유: 컬럼 추가(2026-07-21) 이전의 목·스냅샷과의 호환.
    */
   content_doc?: EditorDoc | null;
+  /**
+   * 부모 페이지 id(자기참조 FK, on delete set null — ⑤ 페이지 중첩).
+   * null이면 루트. 옵셔널인 이유는 content_doc과 같다(컬럼 추가 전 호환).
+   */
+  parent_id?: number | string | null;
 };
 
 /** 행 → 클라이언트 엔티티. id는 문자열(R2), created_at은 epoch ms(R3). */
@@ -31,6 +36,7 @@ export function rowToPost(row: PageRow): Post {
     createdAt: Date.parse(row.created_at),
     deletedAt: row.deleted_at ? Date.parse(row.deleted_at) : null,
     contentDoc: row.content_doc ?? null,
+    parentId: row.parent_id != null ? String(row.parent_id) : null,
   };
 }
 
@@ -39,13 +45,22 @@ export function sortPosts(posts: Post[]): Post[] {
   return [...posts].sort((a, b) => b.createdAt - a.createdAt);
 }
 
-/** INSERT 페이로드. user_id를 명시하지 않으면 DB 기본값 때문에 고아 행이 생긴다(R4). */
-export function newInsertPayload(title: string, userId: string) {
-  return {
+/**
+ * INSERT 페이로드. user_id를 명시하지 않으면 DB 기본값 때문에 고아 행이 생긴다(R4).
+ * parentId를 주면 parent_id로 담아 하위 페이지로 생성한다(⑤ — null/생략은 루트).
+ */
+export function newInsertPayload(
+  title: string,
+  userId: string,
+  parentId?: string | null
+) {
+  const payload: Record<string, unknown> = {
     title: (title ?? "").trim(),
     content: "",
     user_id: userId,
   };
+  if (parentId != null) payload.parent_id = parentId;
+  return payload;
 }
 
 function fail(error: { message?: string } | null, fallback: string): never {
@@ -80,10 +95,14 @@ export async function fetchTrashedPosts(): Promise<Post[]> {
 }
 
 /** 새 게시글 생성. user_id를 명시해야 소유자가 올바르게 기록된다(R4). */
-export async function insertPost(title: string, userId: string): Promise<Post> {
+export async function insertPost(
+  title: string,
+  userId: string,
+  parentId?: string | null
+): Promise<Post> {
   const { data, error } = await getSupabase()
     .from(TABLE)
-    .insert(newInsertPayload(title, userId))
+    .insert(newInsertPayload(title, userId, parentId))
     .select()
     .single();
   if (error || !data) fail(error, "게시글을 저장하지 못했습니다.");
@@ -140,12 +159,20 @@ export async function restorePost(id: string): Promise<void> {
 }
 
 /** 편집 패치 — 에디터는 content(플레인 projection)와 contentDoc(블록 JSON)을 함께 보낸다. */
-export type PostPatch = Partial<Pick<Post, "title" | "content" | "contentDoc">>;
+export type PostPatch = Partial<
+  Pick<Post, "title" | "content" | "contentDoc" | "parentId">
+>;
 
-/** 클라이언트 필드명 → DB 컬럼명 매핑(contentDoc → content_doc). 나머지는 이름이 같다. */
+/**
+ * 클라이언트 필드명 → DB 컬럼명 매핑(contentDoc → content_doc, parentId → parent_id).
+ * 나머지는 이름이 같다. null도 유효한 값(parent_id null = 루트 승격)이라 in 연산자로 판별한다.
+ */
 function toRowPatch(patch: PostPatch): Record<string, unknown> {
-  const { contentDoc, ...rest } = patch;
-  return "contentDoc" in patch ? { ...rest, content_doc: contentDoc } : rest;
+  const { contentDoc, parentId, ...rest } = patch;
+  const row: Record<string, unknown> = { ...rest };
+  if ("contentDoc" in patch) row.content_doc = contentDoc;
+  if ("parentId" in patch) row.parent_id = parentId;
+  return row;
 }
 
 /** 게시글 수정. 소유권은 RLS `page_update_own`이 서버에서 강제한다. */

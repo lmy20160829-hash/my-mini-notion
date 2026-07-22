@@ -57,7 +57,22 @@ describe("rowToPost", () => {
       createdAt: Date.parse("2026-07-16T03:04:05.000Z"),
       deletedAt: null,
       contentDoc: null,
+      parentId: null,
     });
+  });
+
+  test("parent_id(bigint)를 문자열 parentId로, 없으면 null로 매핑한다 (⑤ 중첩)", () => {
+    const base = {
+      id: 9,
+      created_at: "2026-07-16T00:00:00.000Z",
+      title: "자식 글",
+      content: "",
+      user_id: "u-1",
+      deleted_at: null,
+    };
+    expect(rowToPost({ ...base, parent_id: 3 }).parentId).toBe("3");
+    expect(rowToPost({ ...base, parent_id: null }).parentId).toBe(null);
+    expect(rowToPost(base).parentId).toBe(null); // 컬럼 추가 전 목·스냅샷 호환
   });
 
   test("content_doc이 있으면 contentDoc으로, 없으면 null로 매핑한다 (dual-read)", () => {
@@ -155,6 +170,20 @@ describe("newInsertPayload", () => {
       user_id: "user-123",
     });
   });
+
+  test("parentId를 주면 parent_id 컬럼으로 담는다 (⑤ 하위 페이지 생성)", () => {
+    expect(newInsertPayload("자식", "user-123", "77")).toEqual({
+      title: "자식",
+      content: "",
+      user_id: "user-123",
+      parent_id: "77",
+    });
+  });
+
+  test("parentId가 null이거나 생략되면 parent_id를 보내지 않는다(루트 글)", () => {
+    expect("parent_id" in newInsertPayload("루트", "user-123", null)).toBe(false);
+    expect("parent_id" in newInsertPayload("루트", "user-123")).toBe(false);
+  });
 });
 
 describe("insertPost", () => {
@@ -188,7 +217,33 @@ describe("insertPost", () => {
       createdAt: Date.parse("2026-07-16T09:00:00.000Z"),
       deletedAt: null,
       contentDoc: null,
+      parentId: null,
     });
+  });
+
+  test("parentId를 주면 INSERT 페이로드에 parent_id가 담긴다 (⑤)", async () => {
+    const q = makeQuery({
+      data: {
+        id: 43,
+        created_at: "2026-07-16T09:00:00.000Z",
+        title: "",
+        content: "",
+        user_id: "user-1",
+        parent_id: 42,
+      },
+      error: null,
+    });
+    fromMock.mockReturnValue(q);
+
+    const post = await insertPost("", "user-1", "42");
+
+    expect(q.insert).toHaveBeenCalledWith({
+      title: "",
+      content: "",
+      user_id: "user-1",
+      parent_id: "42",
+    });
+    expect(post.parentId).toBe("42");
   });
 
   test("서버 오류면 throw 한다(호출부가 실패를 알 수 있어야 한다)", async () => {
@@ -239,6 +294,7 @@ describe("fetchMyPosts", () => {
         createdAt: Date.parse("2026-07-16T10:00:00.000Z"),
         deletedAt: null,
         contentDoc: null,
+        parentId: null,
       },
       {
         id: "1",
@@ -247,6 +303,7 @@ describe("fetchMyPosts", () => {
         createdAt: Date.parse("2026-07-15T10:00:00.000Z"),
         deletedAt: null,
         contentDoc: null,
+        parentId: null,
       },
     ]);
   });
@@ -490,6 +547,16 @@ describe("updatePostFields", () => {
     fromMock.mockReturnValue(q);
     await updatePostFields("7", { content: "본문만" });
     expect(q.update).toHaveBeenCalledWith({ content: "본문만" });
+  });
+
+  test("parentId는 parent_id 컬럼으로 매핑한다 (⑤ — null로 루트 승격 포함)", async () => {
+    const q = makeQuery({ data: [{ id: 7 }], error: null });
+    fromMock.mockReturnValue(q);
+    await updatePostFields("7", { parentId: "3" });
+    expect(q.update).toHaveBeenCalledWith({ parent_id: "3" });
+
+    await updatePostFields("7", { parentId: null });
+    expect(q.update).toHaveBeenLastCalledWith({ parent_id: null });
   });
 
   test("서버 오류면 throw 한다", async () => {

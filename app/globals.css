@@ -745,3 +745,31 @@ input::placeholder, textarea::placeholder { color: var(--text-placeholder); }
   color: var(--text-placeholder);
   float: left; height: 0; pointer-events: none;
 }
+
+/* ---------- wt3: 사이드바 페이지 트리 (⑤, §4.7) ---------- */
+/* 행 = 접기 삼각형 + 글 항목(.sidebar-item 재사용) + hover `+`. 들여쓰기는
+   인라인 padding-left(12px/단계). 항목 스타일은 §2.5를 그대로 입는다. */
+.tree-row { display: flex; align-items: center; gap: 2px; }
+.tree-row .sidebar-item { flex: 1; min-width: 0; padding: 0 8px 0 4px; }
+.tree-toggle {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; padding: 0; border: none; background: none;
+  border-radius: var(--radius-sm); color: var(--text-muted); cursor: pointer; flex: none;
+  transition: background var(--dur-fast) var(--ease-standard);
+}
+.tree-toggle:hover { background: var(--surface-hover); color: var(--text-secondary); }
+.tree-toggle svg { transition: transform var(--dur-fast) var(--ease-standard); }
+.tree-toggle.is-open svg { transform: rotate(90deg); }
+/* 자식 없는 항목의 자리 맞춤용 스페이서 — 보이지 않지만 폭은 차지한다. */
+.tree-toggle--spacer { visibility: hidden; cursor: default; }
+/* 하위 페이지 추가: 섹션 헤더 액션(§2.6)과 같은 hover 노출 관행. */
+.tree-add {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px; padding: 0; border: none; background: none;
+  border-radius: var(--radius-sm); color: var(--text-muted); cursor: pointer; flex: none;
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease-standard),
+    background var(--dur-fast) var(--ease-standard);
+}
+.tree-row:hover .tree-add, .tree-add:focus-visible { opacity: 1; }
+.tree-add:hover { background: var(--surface-hover); color: var(--text-secondary); }

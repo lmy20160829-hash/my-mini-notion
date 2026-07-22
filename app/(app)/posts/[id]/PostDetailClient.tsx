@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Calendar, ChevronRight, Trash2 } from "lucide-react";
 import { formatDate, useApp } from "@/lib/store";
+import { ancestorChain } from "@/lib/tree";
 import { textToDoc } from "@/lib/editor/doc";
 import { IconButton } from "@/components/ui/IconButton";
 import { CharCount } from "@/components/CharCount";
@@ -47,6 +48,21 @@ export function PostDetailClient() {
         >
           내 업무
         </button>
+        {/* 조상 체인(⑤): 루트→직계 부모 순서. 각 조상은 해당 글로 이동한다(§4.3). */}
+        {ancestorChain(app.posts, post.id).map((ancestor) => (
+          <span key={ancestor.id} style={{ display: "contents" }}>
+            <span className="detail-breadcrumb__sep">
+              <ChevronRight size={14} />
+            </span>
+            <button
+              type="button"
+              className="detail-breadcrumb__root"
+              onClick={() => router.push(`/posts/${ancestor.id}`)}
+            >
+              {ancestor.title.trim() || "제목 없음"}
+            </button>
+          </span>
+        ))}
         <span className="detail-breadcrumb__sep">
           <ChevronRight size={14} />
         </span>
