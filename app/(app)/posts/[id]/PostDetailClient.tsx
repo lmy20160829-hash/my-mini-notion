@@ -4,7 +4,9 @@ import { useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Calendar, ChevronRight, Trash2 } from "lucide-react";
 import { formatDate, useApp } from "@/lib/store";
+import { useAuth } from "@/lib/auth";
 import { ancestorChain } from "@/lib/tree";
+import { setAttachmentContext } from "@/lib/attachments";
 import { textToDoc } from "@/lib/editor/doc";
 import { IconButton } from "@/components/ui/IconButton";
 import { CharCount } from "@/components/CharCount";
@@ -13,15 +15,26 @@ import { PostEditor, buildEditPatch } from "@/components/editor/PostEditor";
 
 export function PostDetailClient() {
   const app = useApp();
+  const auth = useAuth();
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
 
   const post = app.posts.find((p) => p.id === id);
+  const userId = auth.session?.user?.id ?? null;
+  const postId = post?.id ?? null;
 
   // Deleted or unknown post → back to the list.
   useEffect(() => {
     if (app.loaded && !post) router.replace("/");
   }, [app.loaded, post, router]);
+
+  // 에디터 첨부 업로드 컨텍스트(⑥⑧, §5.13): editorProps는 정적 객체라 props를 못
+  // 받으므로, 글 진입 시 {userId, postId}를 모듈 컨텍스트로 넘기고 이탈 시 비운다.
+  useEffect(() => {
+    if (!userId || !postId) return;
+    setAttachmentContext({ userId, postId });
+    return () => setAttachmentContext(null);
+  }, [userId, postId]);
 
   if (!post) return null;
 
