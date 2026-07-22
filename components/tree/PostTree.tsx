@@ -63,7 +63,14 @@ export function PostTree({
             onClick={() => onOpen(post.id)}
           >
             <span className="sidebar-item__icon">
-              <FileText size={16} />
+              {/* ⑦: 페이지 이모지 아이콘이 있으면 기본 FileText 대신 표시. */}
+              {post.icon ? (
+                <span className="tree-emoji" aria-hidden="true">
+                  {post.icon}
+                </span>
+              ) : (
+                <FileText size={16} />
+              )}
             </span>
             <span className="sidebar-item__label">{label}</span>
           </button>

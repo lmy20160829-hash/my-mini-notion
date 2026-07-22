@@ -30,6 +30,8 @@ export type Post = {
   contentDoc: EditorDoc | null;
   /** 부모 페이지 id(⑤ 중첩). null이면 루트. 트리는 표시 계층일 뿐 데이터는 평면이다. */
   parentId: string | null;
+  /** 페이지 이모지 아이콘(⑦). null이면 기본 아이콘(FileText) 유지. */
+  icon: string | null;
 };
 
 /** 프로필 오버라이드(별명) 전용 로컬 키. 게시글·프로필 사진은 서버(Supabase)에 저장된다. */
@@ -82,6 +84,8 @@ type AppStore = AppState & {
   toggleSidebar(): void;
   /** 트리 항목 접기/펼치기(⑤). collapsed=true면 자식을 숨긴다. localStorage에 영속. */
   setTreeNodeCollapsed(id: string, collapsed: boolean): void;
+  /** 페이지 아이콘 저장(⑦) — 디바운스 없는 단발 UPDATE(A2 계약 경유). null = 제거. */
+  setPostIcon(id: string, icon: string | null): void;
 };
 
 const AppContext = createContext<AppStore | null>(null);
@@ -301,6 +305,27 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setState((s) => ({ ...s, sidebarCollapsed: !s.sidebarCollapsed }));
   }, []);
 
+  // 페이지 아이콘 저장(⑦): 로컬 즉시 반영 + 디바운스 없는 단발 UPDATE(스펙 ⑦ —
+  // 키 입력이 아니라 단일 클릭이라 묶을 것이 없다). 실패하면 이전 값으로 되돌리고 알린다.
+  const setPostIcon = useCallback((id: string, icon: string | null) => {
+    let previous: string | null = null;
+    setState((s) => ({
+      ...s,
+      posts: s.posts.map((p) => {
+        if (p.id !== id) return p;
+        previous = p.icon;
+        return { ...p, icon };
+      }),
+    }));
+    void updatePostFields(id, { icon }).catch((e) => {
+      setState((s) => ({
+        ...s,
+        posts: s.posts.map((p) => (p.id === id ? { ...p, icon: previous } : p)),
+      }));
+      notify(errorMessage(e, "아이콘을 저장하지 못했습니다."));
+    });
+  }, []);
+
   // 트리 항목 접기/펼치기(⑤). 하위 페이지 생성 시 부모를 강제로 펼치기 위해
   // 토글이 아니라 목표 상태를 받는다(collapsed=false → 펼침 보장).
   const setTreeNodeCollapsed = useCallback((id: string, collapsed: boolean) => {
@@ -327,6 +352,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setProfileImagePath,
     toggleSidebar,
     setTreeNodeCollapsed,
+    setPostIcon,
   };
 
   return <AppContext.Provider value={store}>{children}</AppContext.Provider>;

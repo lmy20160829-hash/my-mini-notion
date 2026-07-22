@@ -11,6 +11,7 @@ import { textToDoc } from "@/lib/editor/doc";
 import { IconButton } from "@/components/ui/IconButton";
 import { CharCount } from "@/components/CharCount";
 import { PostCover } from "@/components/PostCover";
+import { PageIconButton } from "@/components/icon/PageIconButton";
 import { PostEditor, buildEditPatch } from "@/components/editor/PostEditor";
 
 export function PostDetailClient() {
@@ -72,6 +73,8 @@ export function PostDetailClient() {
               className="detail-breadcrumb__root"
               onClick={() => router.push(`/posts/${ancestor.id}`)}
             >
+              {/* ⑦: 아이콘이 있으면 이모지를 앞에 붙인다(§4.3). */}
+              {ancestor.icon ? `${ancestor.icon} ` : ""}
               {ancestor.title.trim() || "제목 없음"}
             </button>
           </span>
@@ -80,6 +83,7 @@ export function PostDetailClient() {
           <ChevronRight size={14} />
         </span>
         <span className="detail-breadcrumb__current">
+          {post.icon ? `${post.icon} ` : ""}
           {post.title.trim() || "제목 없음"}
         </span>
         <div className="detail-breadcrumb__spacer" />
@@ -94,6 +98,12 @@ export function PostDetailClient() {
       </div>
 
       <PostCover key={post.id} />
+
+      {/* 페이지 아이콘(⑦): 커버 아래·제목 위. 선택 즉시 단발 UPDATE(§5.12). */}
+      <PageIconButton
+        icon={post.icon}
+        onChange={(icon) => app.setPostIcon(post.id, icon)}
+      />
 
       <input
         className="detail-title"

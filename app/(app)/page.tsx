@@ -117,7 +117,14 @@ export default function ListPage() {
                 }}
               >
                 <span className="post-card__tile">
-                  <FileText size={18} />
+                  {/* ⑦: 페이지 이모지 아이콘이 있으면 기본 FileText 대신 표시(§4.2). */}
+                  {post.icon ? (
+                    <span className="tree-emoji tree-emoji--lg" aria-hidden="true">
+                      {post.icon}
+                    </span>
+                  ) : (
+                    <FileText size={18} />
+                  )}
                 </span>
                 <span className="post-card__body">
                   <span className="post-card__title">

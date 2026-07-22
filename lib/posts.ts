@@ -25,6 +25,8 @@ export type PageRow = {
    * null이면 루트. 옵셔널인 이유는 content_doc과 같다(컬럼 추가 전 호환).
    */
   parent_id?: number | string | null;
+  /** 페이지 이모지 아이콘(⑦, text ≤16자 check). null이면 기본 아이콘(FileText). */
+  icon?: string | null;
 };
 
 /** 행 → 클라이언트 엔티티. id는 문자열(R2), created_at은 epoch ms(R3). */
@@ -37,6 +39,7 @@ export function rowToPost(row: PageRow): Post {
     deletedAt: row.deleted_at ? Date.parse(row.deleted_at) : null,
     contentDoc: row.content_doc ?? null,
     parentId: row.parent_id != null ? String(row.parent_id) : null,
+    icon: row.icon ?? null,
   };
 }
 
@@ -160,7 +163,7 @@ export async function restorePost(id: string): Promise<void> {
 
 /** 편집 패치 — 에디터는 content(플레인 projection)와 contentDoc(블록 JSON)을 함께 보낸다. */
 export type PostPatch = Partial<
-  Pick<Post, "title" | "content" | "contentDoc" | "parentId">
+  Pick<Post, "title" | "content" | "contentDoc" | "parentId" | "icon">
 >;
 
 /**

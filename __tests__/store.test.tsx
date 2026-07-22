@@ -111,6 +111,7 @@ describe("createPost (US1)", () => {
       deletedAt: null,
       contentDoc: null,
       parentId: null,
+      icon: null,
     });
     expect(result.current.posts.map((p) => p.id)).toEqual(["2", "1"]);
   });

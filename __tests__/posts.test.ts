@@ -58,6 +58,7 @@ describe("rowToPost", () => {
       deletedAt: null,
       contentDoc: null,
       parentId: null,
+      icon: null,
     });
   });
 
@@ -73,6 +74,20 @@ describe("rowToPost", () => {
     expect(rowToPost({ ...base, parent_id: 3 }).parentId).toBe("3");
     expect(rowToPost({ ...base, parent_id: null }).parentId).toBe(null);
     expect(rowToPost(base).parentId).toBe(null); // 컬럼 추가 전 목·스냅샷 호환
+  });
+
+  test("icon을 그대로 매핑하고 없으면 null (⑦ 이모지 아이콘)", () => {
+    const base = {
+      id: 9,
+      created_at: "2026-07-16T00:00:00.000Z",
+      title: "글",
+      content: "",
+      user_id: "u-1",
+      deleted_at: null,
+    };
+    expect(rowToPost({ ...base, icon: "🔥" }).icon).toBe("🔥");
+    expect(rowToPost({ ...base, icon: null }).icon).toBe(null);
+    expect(rowToPost(base).icon).toBe(null); // 컬럼 추가 전 목·스냅샷 호환
   });
 
   test("content_doc이 있으면 contentDoc으로, 없으면 null로 매핑한다 (dual-read)", () => {
@@ -218,6 +233,7 @@ describe("insertPost", () => {
       deletedAt: null,
       contentDoc: null,
       parentId: null,
+      icon: null,
     });
   });
 
@@ -295,6 +311,7 @@ describe("fetchMyPosts", () => {
         deletedAt: null,
         contentDoc: null,
         parentId: null,
+        icon: null,
       },
       {
         id: "1",
@@ -304,6 +321,7 @@ describe("fetchMyPosts", () => {
         deletedAt: null,
         contentDoc: null,
         parentId: null,
+        icon: null,
       },
     ]);
   });
@@ -557,6 +575,16 @@ describe("updatePostFields", () => {
 
     await updatePostFields("7", { parentId: null });
     expect(q.update).toHaveBeenLastCalledWith({ parent_id: null });
+  });
+
+  test("icon patch는 이름 그대로 나간다 (⑦ — null = 제거)", async () => {
+    const q = makeQuery({ data: [{ id: 7 }], error: null });
+    fromMock.mockReturnValue(q);
+    await updatePostFields("7", { icon: "🔥" });
+    expect(q.update).toHaveBeenCalledWith({ icon: "🔥" });
+
+    await updatePostFields("7", { icon: null });
+    expect(q.update).toHaveBeenLastCalledWith({ icon: null });
   });
 
   test("서버 오류면 throw 한다", async () => {
