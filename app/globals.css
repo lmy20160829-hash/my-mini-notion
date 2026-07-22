@@ -854,4 +854,70 @@ hr.blk-hr.ProseMirror-selectednode { border-top-color: var(--border-focus); }
 /* §7 TODO 준수: 메뉴 등장(mnPop)은 reduced-motion에서 끈다. */
 @media (prefers-reduced-motion: reduce) {
   .handle-menu { animation: none; }
+/* ---------- wt1 ①: 플로팅 서식 툴바 .fmt-* (§2.10, 파일 끝 추가 — 줄번호 보존) ---------- */
+/* 텍스트 선택 시에만 뜨는 말풍선(BubbleMenu). 카드 토큰 + mnPop 등장(§1.5). */
+.fmt-bar {
+  display: flex; align-items: center; gap: 2px; padding: 4px;
+  background: var(--surface-card); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg); box-shadow: var(--shadow-lg);
+  animation: mnPop 0.14s var(--ease-out);
+}
+/* 활성 마크 — §2.2 .icon-btn 재사용 + 활성 배경 --surface-active. */
+.fmt-bar .icon-btn.is-active { background: var(--surface-active); color: var(--text-strong); }
+/* 링크 미니 입력 — §2.7.1 .input-sm 과 동일 토큰(높이 32/패딩/보더/포커스 링). */
+.fmt-link-input {
+  display: flex; align-items: center; height: 32px; padding: 0 10px; margin-left: 4px;
+  background: var(--surface-subtle); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  transition: border-color var(--dur-fast) var(--ease-standard),
+    background var(--dur-fast) var(--ease-standard),
+    box-shadow var(--dur-fast) var(--ease-standard);
+}
+.fmt-link-input:focus-within {
+  background: var(--surface-card); border-color: var(--border-focus); box-shadow: var(--shadow-focus);
+}
+.fmt-link-input input {
+  width: 200px; border: none; outline: none; background: transparent;
+  font-size: 13px; color: var(--text-body);
+}
+/* §7 TODO 준수: 새 등장 애니메이션은 reduced-motion 에서 끈다(.modal-card 전례). */
+@media (prefers-reduced-motion: reduce) {
+  .fmt-bar { animation: none; }
+}
+
+/* ---------- wt1 ②: 에디터 슬래시 커맨드 메뉴 .slash2-* (§2.11, 파일 끝 추가) ---------- */
+/* 기존 컴포저 슬래시 메뉴(.slash-menu, §2.7.8)와 별개 — 같은 카드·hover·타일 토큰 재사용. */
+.slash2-menu {
+  position: fixed; width: 240px; max-height: 320px; overflow-y: auto;
+  background: var(--surface-card); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); padding: 6px;
+  z-index: 30; animation: mnPop 0.14s var(--ease-out);
+}
+.slash2-menu__item {
+  display: flex; align-items: center; gap: 12px; width: 100%; padding: 6px 10px;
+  border: none; background: none; border-radius: var(--radius-md);
+  cursor: pointer; text-align: left;
+  transition: background var(--dur-fast) var(--ease-standard);
+}
+.slash2-menu__item:hover, .slash2-menu__item.is-selected { background: var(--surface-hover); }
+.slash2-menu__tile {
+  width: 34px; height: 34px; flex: none;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-md); background: var(--accent-soft); color: var(--accent);
+}
+.slash2-menu__name { font-size: 13px; font-weight: 600; color: var(--text-strong); }
+.slash2-menu__empty { padding: 8px 10px; font-size: 13px; color: var(--text-muted); }
+@media (prefers-reduced-motion: reduce) {
+  .slash2-menu { animation: none; }
+}
+
+/* ---------- wt1 ⑨: 페이지 템플릿 행 .tpl-* (§5.11, 파일 끝 추가) ---------- */
+/* 빈 글 상세 진입 시 본문 위 버튼 줄 — Button secondary(§2.1) 재사용. */
+.tpl-row {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  margin-bottom: 14px;
+  animation: mnPop 0.14s var(--ease-out);
+}
+@media (prefers-reduced-motion: reduce) {
+  .tpl-row { animation: none; }
 }
