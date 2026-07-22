@@ -10,6 +10,7 @@ import { docToText, type EditorDoc } from "@/lib/editor/doc";
 import { MARKS } from "@/lib/editor/marks";
 import { NODES } from "@/lib/editor/nodes";
 import { MEDIA_NODES, mediaEditorProps } from "@/lib/editor/media-nodes";
+import { FormatToolbar } from "@/components/editor/FormatToolbar";
 
 /**
  * 저장 페이로드 계약(dual-write): 블록 JSON과 함께 플레인 projection을 항상 보낸다 —
@@ -60,5 +61,11 @@ export function PostEditor({
     onUpdate: ({ editor: e }) => onDocChange(e.getJSON() as EditorDoc),
   });
 
-  return <EditorContent editor={editor} />;
+  // wt1 UI는 EditorContent 형제로만 결합한다(오버뷰 스펙 §파일 소유권 — 결합부 불변).
+  return (
+    <>
+      <FormatToolbar editor={editor} />
+      <EditorContent editor={editor} />
+    </>
+  );
 }

@@ -745,3 +745,34 @@ input::placeholder, textarea::placeholder { color: var(--text-placeholder); }
   color: var(--text-placeholder);
   float: left; height: 0; pointer-events: none;
 }
+
+/* ---------- wt1 ①: 플로팅 서식 툴바 .fmt-* (§2.10, 파일 끝 추가 — 줄번호 보존) ---------- */
+/* 텍스트 선택 시에만 뜨는 말풍선(BubbleMenu). 카드 토큰 + mnPop 등장(§1.5). */
+.fmt-bar {
+  display: flex; align-items: center; gap: 2px; padding: 4px;
+  background: var(--surface-card); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg); box-shadow: var(--shadow-lg);
+  animation: mnPop 0.14s var(--ease-out);
+}
+/* 활성 마크 — §2.2 .icon-btn 재사용 + 활성 배경 --surface-active. */
+.fmt-bar .icon-btn.is-active { background: var(--surface-active); color: var(--text-strong); }
+/* 링크 미니 입력 — §2.7.1 .input-sm 과 동일 토큰(높이 32/패딩/보더/포커스 링). */
+.fmt-link-input {
+  display: flex; align-items: center; height: 32px; padding: 0 10px; margin-left: 4px;
+  background: var(--surface-subtle); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  transition: border-color var(--dur-fast) var(--ease-standard),
+    background var(--dur-fast) var(--ease-standard),
+    box-shadow var(--dur-fast) var(--ease-standard);
+}
+.fmt-link-input:focus-within {
+  background: var(--surface-card); border-color: var(--border-focus); box-shadow: var(--shadow-focus);
+}
+.fmt-link-input input {
+  width: 200px; border: none; outline: none; background: transparent;
+  font-size: 13px; color: var(--text-body);
+}
+/* §7 TODO 준수: 새 등장 애니메이션은 reduced-motion 에서 끈다(.modal-card 전례). */
+@media (prefers-reduced-motion: reduce) {
+  .fmt-bar { animation: none; }
+}
