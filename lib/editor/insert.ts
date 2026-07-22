@@ -1,5 +1,10 @@
 import type { Editor } from "@tiptap/core";
 import type { BlockSpec } from "@/lib/editor/blocks";
+import { openAttachmentPicker } from "@/lib/editor/media-nodes";
+
+/** 첨부 정책(오버뷰 스펙 §2)의 화이트리스트 — 선택 다이얼로그 accept 힌트. */
+const IMAGE_ACCEPT = "image/png,image/jpeg,image/gif,image/webp";
+const FILE_ACCEPT = ".pdf,.zip,.txt,.md,.csv,.docx,.xlsx";
 
 /**
  * 블록 삽입 — **wt1 전용 파일** (스펙 wt1 §②).
@@ -60,6 +65,15 @@ export function insertBlock(editor: Editor, spec: BlockSpec): boolean {
         .insertContent({ type: spec.type, attrs: spec.attrs, content: [{ type: "paragraph" }] })
         .run();
     }
+    case "image":
+    case "fileBlock":
+      // P3 결선(wt1 ↔ wt3): 빈 미디어 노드를 넣지 않는다 — 파일 선택기를 열고,
+      // 업로드가 성공했을 때만 wt3 업로드 경로가 노드를 삽입한다(§5.13 실패 시 미삽입).
+      openAttachmentPicker(
+        editor.view,
+        spec.type === "image" ? IMAGE_ACCEPT : FILE_ACCEPT
+      );
+      return true;
     default:
       return chain().insertContent({ type: spec.type, attrs: spec.attrs }).run();
   }
