@@ -920,4 +920,133 @@ hr.blk-hr.ProseMirror-selectednode { border-top-color: var(--border-focus); }
 }
 @media (prefers-reduced-motion: reduce) {
   .tpl-row { animation: none; }
+
+/* ---------- wt3: 사이드바 페이지 트리 (⑤, §4.7) ---------- */
+/* 행 = 접기 삼각형 + 글 항목(.sidebar-item 재사용) + hover `+`. 들여쓰기는
+   인라인 padding-left(12px/단계). 항목 스타일은 §2.5를 그대로 입는다. */
+.tree-row { display: flex; align-items: center; gap: 2px; }
+.tree-row .sidebar-item { flex: 1; min-width: 0; padding: 0 8px 0 4px; }
+.tree-toggle {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; padding: 0; border: none; background: none;
+  border-radius: var(--radius-sm); color: var(--text-muted); cursor: pointer; flex: none;
+  transition: background var(--dur-fast) var(--ease-standard);
+}
+.tree-toggle:hover { background: var(--surface-hover); color: var(--text-secondary); }
+.tree-toggle svg { transition: transform var(--dur-fast) var(--ease-standard); }
+.tree-toggle.is-open svg { transform: rotate(90deg); }
+/* 자식 없는 항목의 자리 맞춤용 스페이서 — 보이지 않지만 폭은 차지한다. */
+.tree-toggle--spacer { visibility: hidden; cursor: default; }
+/* 하위 페이지 추가: 섹션 헤더 액션(§2.6)과 같은 hover 노출 관행. */
+.tree-add {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px; padding: 0; border: none; background: none;
+  border-radius: var(--radius-sm); color: var(--text-muted); cursor: pointer; flex: none;
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease-standard),
+    background var(--dur-fast) var(--ease-standard);
+}
+.tree-row:hover .tree-add, .tree-add:focus-visible { opacity: 1; }
+.tree-add:hover { background: var(--surface-hover); color: var(--text-secondary); }
+
+/* ---------- wt3: 본문 이미지·파일 블록 + 업로드 (⑥⑧, §2.13) ---------- */
+/* 본문 이미지: 컬럼 폭을 넘지 않고 커버(§2.7.15)와 같은 radius-lg. */
+.attach-img {
+  max-width: 100%; height: auto; display: block;
+  margin: 8px 0; border-radius: var(--radius-lg);
+}
+.attach-img.ProseMirror-selectednode { outline: 2px solid var(--border-focus); }
+/* 파일 블록 카드: .post-card(§2.7.9) 토큰 계열 — 타일 + 파일명/크기 + 다운로드. */
+.attach-file {
+  display: flex; align-items: center; gap: 14px;
+  margin: 8px 0; padding: 10px 14px;
+  background: var(--surface-card); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg); box-shadow: var(--shadow-xs);
+}
+.attach-file.ProseMirror-selectednode { border-color: var(--border-focus); }
+.attach-file__tile {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 38px; height: 38px; border-radius: var(--radius-md);
+  background: var(--surface-subtle); color: var(--text-secondary); flex: none;
+}
+.attach-file__body { flex: 1; min-width: 0; }
+.attach-file__name {
+  display: block; font-size: 14px; font-weight: 600; color: var(--text-strong);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.attach-file__size { font-size: 12px; color: var(--text-muted); }
+.attach-file__download {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; border-radius: var(--radius-md);
+  color: var(--text-muted); flex: none;
+  transition: background var(--dur-fast) var(--ease-standard),
+    color var(--dur-fast) var(--ease-standard);
+}
+.attach-file__download:hover { background: var(--surface-hover); color: var(--text-secondary); }
+/* 업로드 중 자리표시자: §2.7.15 스켈레톤 shimmer 재사용(위젯 데코레이션 — 문서 무변경). */
+.attach-uploading {
+  height: 72px; margin: 8px 0; border-radius: var(--radius-lg);
+  background: linear-gradient(100deg,
+    var(--surface-subtle) 30%, var(--surface-hover) 50%, var(--surface-subtle) 70%);
+  background-size: 200% 100%;
+  animation: mnShimmer 1.4s ease-in-out infinite;
+}
+/* §7 TODO 준수: 새 애니메이션은 reduced-motion 에서 끄고 정적 배경으로 대체. */
+@media (prefers-reduced-motion: reduce) {
+  .attach-uploading { animation: none; background: var(--surface-hover); }
+}
+
+/* ---------- wt3: 페이지 이모지 아이콘 (⑦, §4.3 확장) ---------- */
+/* 트리·카드 타일에서 FileText 대신 쓰는 이모지 표시(없으면 기존 아이콘 유지). */
+.tree-emoji { font-size: 15px; line-height: 1; }
+.tree-emoji--lg { font-size: 18px; }
+/* 상세: 커버 아래·제목 위 아이콘 줄. 팝오버의 absolute 기준. */
+.icon-pick-row { position: relative; margin: 0 0 6px; }
+/* 아이콘 있음: 이모지 40px 버튼. */
+.icon-pick-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 2px 6px; border: none; background: none; cursor: pointer;
+  font-size: 40px; line-height: 1; border-radius: var(--radius-md);
+  transition: background var(--dur-fast) var(--ease-standard);
+}
+.icon-pick-btn:hover { background: var(--surface-hover); }
+/* 아이콘 없음: hover(줄 영역)·포커스에서만 보이는 유령 버튼. */
+.icon-pick-ghost {
+  display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px;
+  border: none; background: none; border-radius: var(--radius-md); cursor: pointer;
+  font-size: 13px; font-weight: 500; color: var(--text-muted); opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease-standard),
+    background var(--dur-fast) var(--ease-standard);
+}
+.icon-pick-row:hover .icon-pick-ghost, .icon-pick-ghost:focus-visible { opacity: 1; }
+.icon-pick-ghost:hover { background: var(--surface-hover); color: var(--text-secondary); }
+/* 팝오버: 슬래시 메뉴(§2.7.8)와 같은 카드 관행(shadow-lg + mnPop). */
+.icon-pick {
+  position: absolute; top: calc(100% + 6px); left: 0; z-index: 30;
+  background: var(--surface-card); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); padding: 10px;
+  animation: mnPop 0.14s var(--ease-out);
+}
+.icon-pick__grid { display: grid; grid-template-columns: repeat(8, 32px); gap: 2px; }
+.icon-pick__item {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; padding: 0; border: none; background: none;
+  border-radius: var(--radius-sm); font-size: 18px; line-height: 1; cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-standard);
+}
+.icon-pick__item:hover { background: var(--surface-hover); }
+.icon-pick__footer {
+  display: flex; margin-top: 8px; padding-top: 8px;
+  border-top: 1px solid var(--border-subtle);
+}
+.icon-pick__remove {
+  padding: 4px 8px; border: none; background: none; border-radius: var(--radius-sm);
+  font-size: 12px; font-weight: 600; color: var(--text-muted); cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-standard),
+    color var(--dur-fast) var(--ease-standard);
+}
+.icon-pick__remove:hover { background: var(--surface-hover); color: var(--text-secondary); }
+/* §7 TODO 준수: 팝오버 등장 mnPop도 reduced-motion 에서 끈다. */
+@media (prefers-reduced-motion: reduce) {
+  .icon-pick { animation: none; }
 }

@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { FileText, RotateCcw, Trash2 } from "lucide-react";
 import { deletePostById, fetchTrashedPosts, restorePost } from "@/lib/posts";
+import { deletePostAttachments } from "@/lib/attachments";
+import { useAuth } from "@/lib/auth";
 import { formatDate, useApp, type Post } from "@/lib/store";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -18,6 +20,8 @@ function errorMessage(e: unknown, fallback: string): string {
  */
 export default function TrashPage() {
   const app = useApp();
+  const auth = useAuth();
+  const userId = auth.session?.user?.id ?? null;
   // null = 로딩 전(아직 그리지 않음 — §3.5 셸 가드와 같은 관행).
   const [trashed, setTrashed] = useState<Post[] | null>(null);
 
@@ -60,6 +64,9 @@ export default function TrashPage() {
     try {
       await deletePostById(post.id);
       removeLocal(post.id);
+      // 첨부 정리(⑧, §5.13): 글 행 삭제가 확정된 뒤의 후속 — 결과를 기다리지 않고
+      // 실패해도 사용자 흐름을 막지 않는다(모듈 내부의 고아 첨부 고정 포맷 로깅만).
+      if (userId) void deletePostAttachments(userId, post.id);
     } catch (e) {
       window.alert(errorMessage(e, "게시글을 삭제하지 못했습니다."));
     }

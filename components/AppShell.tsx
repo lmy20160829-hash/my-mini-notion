@@ -28,6 +28,7 @@ import { IconButton } from "@/components/ui/IconButton";
 import { SidebarItem } from "@/components/ui/SidebarItem";
 import { SidebarSection } from "@/components/ui/SidebarSection";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { PostTree } from "@/components/tree/PostTree";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const app = useApp();
@@ -54,6 +55,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     const post = await app.createPost("");
     if (post) router.push(`/posts/${post.id}`);
   };
+
+  // 트리 hover `+`: 하위 페이지 생성(⑤). 새 자식이 바로 보이도록 부모를 강제 펼침.
+  const newChildPage = async (parentId: string) => {
+    const post = await app.createPost("", parentId);
+    if (post) {
+      app.setTreeNodeCollapsed(parentId, false);
+      router.push(`/posts/${post.id}`);
+    }
+  };
+
+  // 현재 열려 있는 글 id — 트리 활성 표시용(§4.7).
+  const activePostId = pathname?.startsWith("/posts/")
+    ? pathname.slice("/posts/".length)
+    : null;
 
   return (
     <div className="app-root">
@@ -129,15 +144,28 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                       { icon: Plus, title: "새 페이지", onClick: () => void newPage() },
                     ]}
                   >
-                    {navPosts.map((post) => (
-                      <SidebarItem
-                        key={post.id}
-                        icon={FileText}
-                        label={post.title.trim() || "제목 없음"}
-                        active={pathname === `/posts/${post.id}`}
-                        onClick={() => router.push(`/posts/${post.id}`)}
+                    {searching ? (
+                      // 검색 중에는 평면 그대로(§5.8) — 트리는 표시 계층일 뿐이다(⑤).
+                      navPosts.map((post) => (
+                        <SidebarItem
+                          key={post.id}
+                          icon={FileText}
+                          label={post.title.trim() || "제목 없음"}
+                          active={pathname === `/posts/${post.id}`}
+                          onClick={() => router.push(`/posts/${post.id}`)}
+                        />
+                      ))
+                    ) : (
+                      // 평소에는 parent_id 기반 트리(§4.7). 접힘 상태는 스토어 §5.5.
+                      <PostTree
+                        posts={app.posts}
+                        activeId={activePostId}
+                        collapsedIds={app.treeCollapsedIds}
+                        onOpen={(id) => router.push(`/posts/${id}`)}
+                        onToggle={app.setTreeNodeCollapsed}
+                        onCreateChild={(parentId) => void newChildPage(parentId)}
                       />
-                    ))}
+                    )}
                     {app.posts.length === 0 ? (
                       <div className="sidebar-section__empty">
                         아직 글이 없어요.

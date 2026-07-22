@@ -28,6 +28,10 @@ export type Post = {
   deletedAt: number | null;
   /** 에디터 블록 문서(JSON). null이면 content(플레인)를 textToDoc으로 즉석 변환해 렌더. */
   contentDoc: EditorDoc | null;
+  /** 부모 페이지 id(⑤ 중첩). null이면 루트. 트리는 표시 계층일 뿐 데이터는 평면이다. */
+  parentId: string | null;
+  /** 페이지 이모지 아이콘(⑦). null이면 기본 아이콘(FileText) 유지. */
+  icon: string | null;
 };
 
 /** 프로필 오버라이드(별명) 전용 로컬 키. 게시글·프로필 사진은 서버(Supabase)에 저장된다. */
@@ -62,12 +66,15 @@ type AppState = {
   nickname: string | null;
   profileImagePath: string | null;
   sidebarCollapsed: boolean;
+  /** 사이드바 트리(⑤)에서 접어 둔 글 id 목록. 기기 UI 환경설정 — 로그아웃에도 유지. */
+  treeCollapsedIds: string[];
 };
 
 type AppStore = AppState & {
   /** profileImagePath 에 환경변수 앞부분을 붙인 표시용 URL. 경로가 없으면 null. */
   profileImageUrl: string | null;
-  createPost(title: string): Promise<Post | null>;
+  /** parentId를 주면 하위 페이지로 생성한다(⑤ — 사이드바 트리 hover `+`). */
+  createPost(title: string, parentId?: string | null): Promise<Post | null>;
   updatePost(id: string, patch: Partial<Pick<Post, "title" | "content" | "contentDoc">>): void;
   deletePost(id: string): void;
   /** 휴지통에서 복원된 글을 목록에 되넣는다(최신 우선 정렬 유지). `/trash` 화면이 호출한다. */
@@ -75,6 +82,10 @@ type AppStore = AppState & {
   saveNickname(nick: string): void;
   setProfileImagePath(path: string | null): void;
   toggleSidebar(): void;
+  /** 트리 항목 접기/펼치기(⑤). collapsed=true면 자식을 숨긴다. localStorage에 영속. */
+  setTreeNodeCollapsed(id: string, collapsed: boolean): void;
+  /** 페이지 아이콘 저장(⑦) — 디바운스 없는 단발 UPDATE(A2 계약 경유). null = 제거. */
+  setPostIcon(id: string, icon: string | null): void;
 };
 
 const AppContext = createContext<AppStore | null>(null);
@@ -98,6 +109,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     nickname: null,
     profileImagePath: null,
     sidebarCollapsed: false,
+    treeCollapsedIds: [],
   });
   const [profileLoaded, setProfileLoaded] = useState(false);
 
@@ -107,6 +119,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let nickname: string | null = null;
     let sidebarCollapsed = false;
+    let treeCollapsedIds: string[] = [];
     try {
       const raw = localStorage.getItem(KEY);
       if (raw) {
@@ -114,9 +127,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         nickname = d.nickname || null;
         // 이 기능 이전에 저장된 데이터에는 필드가 없다 → 기본값 "펼침".
         sidebarCollapsed = !!d.sidebarCollapsed;
+        // 트리 접힘(⑤) — 필드가 없으면 전부 펼침. 문자열 id만 받는다(스키마 방어).
+        if (Array.isArray(d.treeCollapsed)) {
+          treeCollapsedIds = d.treeCollapsed.filter(
+            (x: unknown): x is string => typeof x === "string"
+          );
+        }
       }
     } catch {}
-    setState((s) => ({ ...s, nickname, sidebarCollapsed }));
+    setState((s) => ({ ...s, nickname, sidebarCollapsed, treeCollapsedIds }));
     setProfileLoaded(true);
   }, []);
 
@@ -129,10 +148,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         JSON.stringify({
           nickname: state.nickname,
           sidebarCollapsed: state.sidebarCollapsed,
+          treeCollapsed: state.treeCollapsedIds,
         })
       );
     } catch {}
-  }, [profileLoaded, state.nickname, state.sidebarCollapsed]);
+  }, [
+    profileLoaded,
+    state.nickname,
+    state.sidebarCollapsed,
+    state.treeCollapsedIds,
+  ]);
 
   // 세션이 확정되면 내 글을 서버에서 불러온다. 로그아웃되면 비운다.
   // 소유자 격리는 RLS(page_select_own)가 서버에서 강제한다.
@@ -179,13 +204,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [auth.ready, userId]);
 
   const createPost = useCallback(
-    async (title: string): Promise<Post | null> => {
+    async (title: string, parentId?: string | null): Promise<Post | null> => {
       if (!userId) {
         notify("로그인이 필요합니다. 다시 로그인해 주세요.");
         return null;
       }
       try {
-        const post = await insertPost(title, userId);
+        const post = await insertPost(title, userId, parentId);
         setState((s) => ({ ...s, posts: [post, ...s.posts] }));
         return post;
       } catch (e) {
@@ -280,6 +305,42 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setState((s) => ({ ...s, sidebarCollapsed: !s.sidebarCollapsed }));
   }, []);
 
+  // 페이지 아이콘 저장(⑦): 로컬 즉시 반영 + 디바운스 없는 단발 UPDATE(스펙 ⑦ —
+  // 키 입력이 아니라 단일 클릭이라 묶을 것이 없다). 실패하면 이전 값으로 되돌리고 알린다.
+  const setPostIcon = useCallback((id: string, icon: string | null) => {
+    let previous: string | null = null;
+    setState((s) => ({
+      ...s,
+      posts: s.posts.map((p) => {
+        if (p.id !== id) return p;
+        previous = p.icon;
+        return { ...p, icon };
+      }),
+    }));
+    void updatePostFields(id, { icon }).catch((e) => {
+      setState((s) => ({
+        ...s,
+        posts: s.posts.map((p) => (p.id === id ? { ...p, icon: previous } : p)),
+      }));
+      notify(errorMessage(e, "아이콘을 저장하지 못했습니다."));
+    });
+  }, []);
+
+  // 트리 항목 접기/펼치기(⑤). 하위 페이지 생성 시 부모를 강제로 펼치기 위해
+  // 토글이 아니라 목표 상태를 받는다(collapsed=false → 펼침 보장).
+  const setTreeNodeCollapsed = useCallback((id: string, collapsed: boolean) => {
+    setState((s) => {
+      const has = s.treeCollapsedIds.includes(id);
+      if (collapsed === has) return s;
+      return {
+        ...s,
+        treeCollapsedIds: collapsed
+          ? [...s.treeCollapsedIds, id]
+          : s.treeCollapsedIds.filter((x) => x !== id),
+      };
+    });
+  }, []);
+
   const store: AppStore = {
     ...state,
     profileImageUrl: profileImageUrl(state.profileImagePath),
@@ -290,6 +351,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     saveNickname,
     setProfileImagePath,
     toggleSidebar,
+    setTreeNodeCollapsed,
+    setPostIcon,
   };
 
   return <AppContext.Provider value={store}>{children}</AppContext.Provider>;
