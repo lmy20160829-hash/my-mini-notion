@@ -247,6 +247,50 @@
 - localStorage 접근 실패(시크릿/차단)는 전부 try/catch로 무시 — 저장만 생략되고 세션 내 토글은 동작한다.
 - 시스템 설정의 **실시간 변경 추종은 범위 밖**이다(최초 결정 시점에만 참조).
 
+#### 1.1.6 색 팔레트 — 글자색 · 배경색 (Phase F 태스크 C2) · `lib/editor/palette.ts`
+
+에디터 서식(Color/Highlight, §1.1의 마크 등록은 `lib/editor/marks.ts`)이 쓰는 컨플루언스식
+색 팔레트. §1.1.1~1.1.5의 CSS 커스텀 프로퍼티 토큰과 달리 **이 팔레트는 CSS 변수가 아니다** —
+Tiptap의 `Color`/`Highlight` 확장은 선택한 값을 문서에 **인라인 style로 저장**한다
+(`style="color: #2f6fed"` / `style="background-color: #dbe8fd"`). 저장된 hex는 테마 토큰을
+전혀 경유하지 않으므로 **다크 테마로 전환해도 재계산되지 않는다** — §1.1.5가 재정의하는
+시맨틱 토큰과 근본적으로 다른 메커니즘이다. 이 한계 때문에 아래 hex는 처음부터 라이트/다크
+양쪽 배경에서 무난히 읽히도록 중간 채도로 골라 고정했다(글자색은 진하게, 배경색은 연하게).
+
+**글자색 8종** — 기본(상속) + 7색. `id`가 팔레트 UI(C3)의 선택 키, `value`가 저장되는 hex.
+
+| id | label | hex | 비고 |
+|---|---|---|---|
+| `default` | 기본 | `null` | 상속(인라인 style 미적용, `unsetColor()`) |
+| `gray` | 회색 | `#6b7280` | |
+| `red` | 빨강 | `#e5484d` | |
+| `orange` | 주황 | `#d97514` | |
+| `yellow` | 노랑 | `#b8860b` | |
+| `green` | 초록 | `#1f9d57` | |
+| `blue` | 파랑 | `#2f6fed` | |
+| `purple` | 보라 | `#8b5cf6` | |
+
+**배경색(형광펜) 8종** — 없음 + 7색. 연한 배경(텍스트 위 판독 우선, 양쪽 테마 공용).
+
+| id | label | hex | 비고 |
+|---|---|---|---|
+| `none` | 없음 | `null` | 하이라이트 미적용(`unsetHighlight()`) |
+| `gray` | 회색 | `#e5e7eb` | |
+| `red` | 빨강 | `#fbdcdb` | |
+| `orange` | 주황 | `#fbe6cf` | |
+| `yellow` | 노랑 | `#fbf1c7` | |
+| `green` | 초록 | `#d5f0e0` | |
+| `blue` | 파랑 | `#dbe8fd` | |
+| `purple` | 보라 | `#e9e2fb` | |
+
+> 글자색·배경색은 `id`가 각각 `gray`/`red`/... 로 겹치지만 별개 배열(`TEXT_COLORS` /
+> `HIGHLIGHT_COLORS`)이며 hex 값도 서로 다르다(글자색은 진한 색조, 배경색은 옅은 색조) —
+> 이름만 대응할 뿐 같은 토큰을 공유하지 않는다.
+>
+> 소비처(C3, 미구현): 색 팝오버가 두 배열을 그대로 렌더링해 스와치 그리드를 만들고,
+> 클릭 시 `value`(hex 또는 `null`)를 `setColor`/`unsetColor`, `toggleHighlight`/`unsetHighlight`에
+> 전달한다.
+
 ### 1.2 타이포그래피 (Typography)
 
 #### 폰트 패밀리 · `globals.css:83-85`
