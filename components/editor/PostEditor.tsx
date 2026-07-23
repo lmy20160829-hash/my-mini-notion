@@ -13,6 +13,7 @@ import { MEDIA_NODES, mediaEditorProps } from "@/lib/editor/media-nodes";
 import { TABLE_NODES } from "@/lib/editor/table-nodes";
 import { EditorDragHandle } from "@/components/editor/DragHandle";
 import { FormatToolbar } from "@/components/editor/FormatToolbar";
+import { TableToolbar } from "@/components/editor/TableToolbar";
 import { SlashMenu } from "@/components/editor/SlashMenu";
 import { TemplatePicker } from "@/components/editor/TemplatePicker";
 
@@ -70,6 +71,7 @@ export function PostEditor({
   return (
     <>
       <FormatToolbar editor={editor} />
+      <TableToolbar editor={editor} />
       <SlashMenu editor={editor} />
       <TemplatePicker editor={editor} initialDoc={initialDoc} />
       <EditorContent editor={editor} />
