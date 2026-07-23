@@ -92,6 +92,22 @@
   대신 doc 형제로 떨어진다. 스키마 불변식은 지켜지고 데이터 손상은 없으므로(테스트로 잠금)
   문서화만 하거나, 셀 안에서 슬래시 항목을 content-aware로 거르는 개선 여지.
 
+- **드래그 핸들 lockDragHandle 근본 수정 (2026-07-23 크래시에서 발견)** — `components/editor/
+  DragHandle.tsx`가 `editor.commands.lockDragHandle()`/`unlockDragHandle()`을 호출하는데, 이
+  커맨드는 base `@tiptap/extension-drag-handle`이 제공하고 react `<DragHandle>`(현재 사용)은
+  `DragHandlePlugin`만 등록해 커맨드를 안 만든다. base 확장이 `PostEditor.tsx`의 `extensions`에
+  없어 핸들 메뉴 열기/닫기 때 "not a function" 크래시가 났다(지난 스프린트부터 잠복, 커밋
+  `deb2279`에서 옵셔널 호출 `?.()`로 크래시만 방어). **근본 수정**: base `DragHandle` 확장을
+  extensions에 등록해 lock/unlock 커맨드와 "메뉴 열림 중 핸들 위치 고정" 기능을 살린다. 단
+  base의 `render()`가 자체 핸들을 그려 react 핸들과 **두 개**가 될 위험이 있어, base를 UI 없이
+  커맨드 전용으로 configure하거나 react 컴포넌트를 base 방식으로 대체하는 설계 검토가 필요하다
+  (결합부 수정이므로 신중히).
+
+- **globals.css 중괄호 균형 회귀 방지 (교훈)** — reduced-motion `@media` 두 블록의 닫는 `}`
+  누락으로 이후 전체 에디터 CSS가 미디어쿼리 안에 갇힌 버그(커밋 `e109c2f`)는 유효한 CSS라
+  빌드·테스트가 못 잡았다. globals.css에 CSS 조각을 추가하는 태스크의 검증 단계에
+  `{`/`}` 개수 대조(`grep -o '{' | wc -l` == `grep -o '}' | wc -l`)를 넣으면 재발을 막는다.
+
 ---
 
 ## 고아 첨부 정리 (post-attachments 버킷)
