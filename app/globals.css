@@ -1050,3 +1050,13 @@ hr.blk-hr.ProseMirror-selectednode { border-top-color: var(--border-focus); }
 @media (prefers-reduced-motion: reduce) {
   .icon-pick { animation: none; }
 }
+
+/* ---------- 표 (①, §2.15) ---------- */
+.tbl { border-collapse: collapse; table-layout: fixed; width: 100%; margin: 12px 0; overflow: hidden; }
+.tbl td, .tbl th { border: 1px solid var(--border-default); padding: 6px 10px; vertical-align: top; position: relative; }
+.tbl th { background: var(--surface-subtle); font-weight: 600; text-align: left; }
+.tbl .selectedCell::after { content: ""; position: absolute; inset: 0; background: var(--accent-soft); mix-blend-mode: multiply; pointer-events: none; }
+.tbl .column-resize-handle { position: absolute; right: -2px; top: 0; bottom: 0; width: 4px; background: var(--accent); cursor: col-resize; }
+/* 표 셀 플로팅 툴바 — 카드 팝오버 관례(§2.10 .fmt-bar와 동일) */
+.tbl-toolbar { display: inline-flex; gap: 2px; padding: 4px; background: var(--surface-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); animation: mnPop 0.14s var(--ease-out); }
+@media (prefers-reduced-motion: reduce) { .tbl-toolbar { animation: none; } }
