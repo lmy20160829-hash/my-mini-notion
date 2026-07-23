@@ -42,4 +42,21 @@ describe("PostEditor 렌더", () => {
       expect(el!.getAttribute("contenteditable")).toBe("true");
     });
   });
+
+  // B2 결선 검증 — TopToolbar(§2.14)가 EditorContent 형제로 결합됐는지 최소 확인.
+  test("TopToolbar(상단 고정 툴바)를 렌더한다", async () => {
+    const { container } = render(
+      <PostEditor
+        initialDoc={textToDoc("기존 본문")}
+        placeholder="내용을 입력하세요."
+        onDocChange={vi.fn()}
+      />
+    );
+
+    await waitFor(() => {
+      const bar = container.querySelector('.top-toolbar[role="toolbar"]');
+      expect(bar).not.toBeNull();
+      expect(bar!.getAttribute("aria-label")).toBe("상단 툴바");
+    });
+  });
 });

@@ -1085,3 +1085,37 @@ hr.blk-hr.ProseMirror-selectednode { border-top-color: var(--border-focus); }
 @media (prefers-reduced-motion: reduce) {
   .clr-pop { animation: none; }
 }
+
+/* ---------- Phase B: 상단 고정 툴바 .top-toolbar-* (§2.14) ---------- */
+/* 본문 위에 상시 노출되는 sticky 바 — 플로팅 서식 툴바(§2.10)·슬래시 메뉴(§2.11, z-index 30)·
+   드래그 핸들(§2.12, z-index 20)과 공존한다. sticky 바는 그보다 낮은 z-index 10으로 잡아
+   메뉴·핸들이 항상 이 바 위에 뜨게 한다. */
+.top-toolbar-sticky {
+  position: sticky; top: 0; z-index: 10;
+  background: var(--surface-page);
+}
+.top-toolbar {
+  display: flex; align-items: center; gap: 4px; flex-wrap: wrap;
+  padding: 6px; background: var(--surface-page); border-bottom: 1px solid var(--border-subtle);
+}
+/* 활성 마크/정렬/목록/링크 버튼 — .fmt-bar(§2.10, globals.css:866)와 동일 관행: .icon-btn(§2.2)
+   재사용 + 활성 배경 --surface-active. 상단 툴바 전용 스코프가 없으면 이 하이라이트가 먹지
+   않는다(B1 Minor 정리 — 기존 .fmt-bar .icon-btn.is-active 규칙은 상단 툴바를 커버하지 않음). */
+.top-toolbar .icon-btn.is-active { background: var(--surface-active); color: var(--text-strong); }
+/* 텍스트 스타일 드롭다운 — §2.7.1 .input-sm과 동일 토큰(높이/보더/포커스 링). */
+.top-toolbar__select {
+  height: 32px; padding: 0 8px;
+  background: var(--surface-subtle); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md); font-size: 13px; color: var(--text-body); cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease-standard),
+    background var(--dur-fast) var(--ease-standard),
+    box-shadow var(--dur-fast) var(--ease-standard);
+}
+.top-toolbar__select:focus {
+  background: var(--surface-card); border-color: var(--border-focus); box-shadow: var(--shadow-focus);
+  outline: none;
+}
+.top-toolbar__divider { width: 1px; height: 20px; margin: 0 2px; background: var(--border-subtle); flex: none; }
+/* 색 팝오버 앵커/위치 — 팝오버 카드 자체 스타일(.clr-pop)은 §2.16이 이미 정의, 여기서는 배치만. */
+.top-toolbar__popover-anchor { position: relative; }
+.top-toolbar__popover { position: absolute; top: calc(100% + 6px); left: 0; z-index: 10; }
