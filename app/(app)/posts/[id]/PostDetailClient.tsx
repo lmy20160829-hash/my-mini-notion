@@ -97,7 +97,9 @@ export function PostDetailClient() {
         </button>
       </div>
 
-      <PostCover key={post.id} />
+      {/* 커버·에디터는 같은 부모의 형제라 key가 겹치면 안 된다. 둘 다 "글이 바뀌면
+          remount"가 목적이므로 post.id에 역할 접두사를 붙여 유일성을 지킨다. */}
+      <PostCover key={`cover-${post.id}`} />
 
       {/* 페이지 아이콘(⑦): 커버 아래·제목 위. 선택 즉시 단발 UPDATE(§5.12). */}
       <PageIconButton
@@ -120,7 +122,7 @@ export function PostDetailClient() {
       {/* dual-read: 블록 문서가 있으면 그대로, 없으면 플레인 텍스트를 즉석 변환(§5.2).
           글이 바뀌면 key 로 remount 해 문서를 갈아끼운다. */}
       <PostEditor
-        key={post.id}
+        key={`editor-${post.id}`}
         initialDoc={post.contentDoc ?? textToDoc(post.content)}
         placeholder="내용을 입력하세요. 떠오르는 생각, 할 일, 메모를 자유롭게 기록해 보세요."
         onDocChange={(doc) => app.updatePost(post.id, buildEditPatch(doc))}
