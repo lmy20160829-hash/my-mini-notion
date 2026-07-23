@@ -6,6 +6,7 @@ import { deletePostById, fetchTrashedPosts, restorePost } from "@/lib/posts";
 import { deletePostAttachments } from "@/lib/attachments";
 import { useAuth } from "@/lib/auth";
 import { formatDate, useApp, type Post } from "@/lib/store";
+import { docToPreview, textToDoc } from "@/lib/editor/doc";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 
@@ -97,8 +98,10 @@ export default function TrashPage() {
                     {post.title.trim() || "제목 없음"}
                   </span>
                   <br />
+                  {/* 미리보기는 내용 있는 첫 블록 한 줄만(§4.2, 목록 화면과 동일).
+                      말줄임(...)은 .post-card__preview의 CSS가 담당한다. */}
                   <span className="post-card__preview">
-                    {post.content.replace(/\s+/g, " ").trim().slice(0, 90) ||
+                    {docToPreview(post.contentDoc ?? textToDoc(post.content)) ||
                       "내용 없음"}
                   </span>
                 </span>

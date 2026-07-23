@@ -132,6 +132,37 @@ test("휴지통이 비어 있으면 빈 상태를 보여준다", async () => {
   expect(await screen.findByText("휴지통이 비어 있어요.")).toBeDefined();
 });
 
+test("휴지통 카드도 첫 블록만 미리보기로 보여준다(목록 화면과 동일, §4.2)", async () => {
+  routes.trash = {
+    data: [
+      {
+        ...trashRow(1, "블록 글", "2026-07-20T12:00:00.000Z"),
+        content: "첫 번째 블록\n두 번째 블록",
+        content_doc: {
+          type: "doc",
+          content: [
+            {
+              type: "paragraph",
+              content: [{ type: "text", text: "첫 번째 블록" }],
+            },
+            {
+              type: "paragraph",
+              content: [{ type: "text", text: "두 번째 블록" }],
+            },
+          ],
+        },
+      },
+    ],
+    error: null,
+  };
+  const { container } = renderTrash();
+
+  await screen.findByText("블록 글");
+  const preview = container.querySelector(".post-card__preview")?.textContent;
+  expect(preview).toBe("첫 번째 블록");
+  expect(preview).not.toContain("두 번째 블록");
+});
+
 test("복원을 누르면 휴지통에서 빠지고 스토어 목록에 되들어간다", async () => {
   routes.trash = {
     data: [trashRow(1, "복원할 글", "2026-07-20T12:00:00.000Z")],

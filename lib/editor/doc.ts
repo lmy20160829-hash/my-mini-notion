@@ -42,3 +42,25 @@ function nodeText(node: EditorNode): string {
 export function docToText(doc: EditorDoc): string {
   return (doc.content ?? []).map(nodeText).join("\n");
 }
+
+/**
+ * 미리보기 상한. CSS(.post-card__preview)가 카드 폭에 맞춰 훨씬 앞에서 말줄임하므로
+ * 눈에 보이는 값이 아니라, 아주 긴 문단이 카드마다 통째로 DOM에 실리는 것만 막는다.
+ */
+const PREVIEW_MAX = 200;
+
+/**
+ * 문서 → 목록 카드 미리보기 문자열(§4.2). docToText와 달리 **내용 있는 첫 블록**
+ * 하나만 뽑는다 — 전체를 이으면 카드 한 줄에 블록들이 뭉쳐 보이기 때문이다.
+ * 빈 문단·이미지·구분선처럼 텍스트가 없는 블록은 건너뛰고, 그런 블록뿐이면 빈
+ * 문자열을 돌려준다(표시 문구 "내용 없음"은 호출부가 정한다).
+ * 말줄임(...)은 CSS가 담당하므로 여기서 붙이지 않는다.
+ */
+export function docToPreview(doc: EditorDoc): string {
+  for (const block of doc.content ?? []) {
+    // 블록 안 hardBreak·연속 공백은 한 칸으로 — 카드는 한 줄짜리다.
+    const line = nodeText(block).replace(/\s+/g, " ").trim();
+    if (line) return line.slice(0, PREVIEW_MAX);
+  }
+  return "";
+}
