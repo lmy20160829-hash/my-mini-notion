@@ -161,10 +161,9 @@ test("표는 셀=공백·행=줄바꿈으로 투영된다", () => {
   expect(docToText(tableDoc)).toBe("이름 역할\n감 PM");
 });
 
-// docToPreview는 top-level 블록 하나(표 전체)에서 whitespace(개행 포함)를 전부
-// 한 칸으로 접는다 — toggle·blockquote 등 다른 다중 문단 블록과 동일한 기존 규칙
-// (§ docToPreview 주석 "블록 안 hardBreak·연속 공백은 한 칸으로"). 표도 예외가
-// 아니므로 모든 행이 한 줄로 이어져 보인다(첫 행만 자르지 않는다).
-test("미리보기는 표 전체를 한 줄로 접어 보여준다(행 구분 없이)", () => {
-  expect(docToPreview(tableDoc)).toBe("이름 역할 감 PM");
+// T3b — 미리보기 정책: 표가 첫 블록이면 표 첫 행만 보여준다(스펙 의도).
+// nodeText 결과에 "\n"이 들어가는 블록은 표뿐이므로(다른 타입은 join("")),
+// docToPreview가 첫 줄만 취하면 표는 첫 행, 그 외 블록은 전체가 그대로 유지된다.
+test("미리보기는 표 첫 행만 보여준다", () => {
+  expect(docToPreview(tableDoc)).toBe("이름 역할");
 });

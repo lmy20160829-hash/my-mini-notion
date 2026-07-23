@@ -62,8 +62,12 @@ const PREVIEW_MAX = 200;
  */
 export function docToPreview(doc: EditorDoc): string {
   for (const block of doc.content ?? []) {
+    // nodeText 결과에 "\n"이 들어가는 블록은 표(table)뿐이다(행 구분자) —
+    // 다른 모든 타입은 구분자 없이 join("")하므로 "\n"을 포함하지 않는다.
+    // 그래서 첫 줄만 취하면 "미리보기 = 첫 블록의 첫 줄" 규칙이 그대로
+    // 성립한다: 표는 첫 행만, 그 외 블록은 전체가 그대로 유지된다.
     // 블록 안 hardBreak·연속 공백은 한 칸으로 — 카드는 한 줄짜리다.
-    const line = nodeText(block).replace(/\s+/g, " ").trim();
+    const line = nodeText(block).split("\n")[0].replace(/\s+/g, " ").trim();
     if (line) return line.slice(0, PREVIEW_MAX);
   }
   return "";
