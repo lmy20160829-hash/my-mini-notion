@@ -8,6 +8,7 @@ import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
 import Blockquote from "@tiptap/extension-blockquote";
 import HorizontalRule from "@tiptap/extension-horizontal-rule";
+import TextAlign from "@tiptap/extension-text-align";
 import { ToggleView } from "@/components/editor/nodes/ToggleView";
 
 /**
@@ -101,4 +102,6 @@ export const NODES: AnyExtension[] = [
   HorizontalRule.configure({ HTMLAttributes: { class: "blk-hr" } }),
   Callout,
   Toggle,
+  // 문단·제목 정렬(좌/중/우) — attrs만 부여, 시각 스타일은 A2(globals.css) 소관.
+  TextAlign.configure({ types: ["heading", "paragraph"] }),
 ];

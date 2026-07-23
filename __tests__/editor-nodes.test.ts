@@ -59,6 +59,12 @@ describe("노드 등록 (blocks.ts 계약)", () => {
     expect(editor.schema.nodes.table).toBeUndefined();
   });
 
+  test("setTextAlign가 문단 정렬 attribute를 바꾼다", () => {
+    const editor = makeEditor();
+    editor.chain().focus().insertContent("가").selectAll().setTextAlign("center").run();
+    expect(editor.isActive({ textAlign: "center" })).toBe(true);
+  });
+
   test("heading은 level 1–3만 허용한다", () => {
     const editor = makeEditor({
       type: "doc",

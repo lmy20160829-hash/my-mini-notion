@@ -42,8 +42,10 @@ function makeEditor(content?: object) {
   return editor;
 }
 
+// TextAlign(A1) 등록으로 paragraph/heading에 textAlign attrs(기본 null)가 붙는다.
 const p = (text: string) => ({
   type: "paragraph",
+  attrs: { textAlign: null },
   content: [{ type: "text", text }],
 });
 
