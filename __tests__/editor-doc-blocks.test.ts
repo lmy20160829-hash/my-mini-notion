@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { docToText, type EditorDoc } from "@/lib/editor/doc";
+import { docToText, docToPreview, type EditorDoc } from "@/lib/editor/doc";
 
 // wt2 ④ — docToText projection이 새 블록 타입에서도 텍스트를 보존하는지 잠근다.
 // 사이드바 검색(filterPosts)·글자 수 칩·`docToText(content_doc) === content` 불변식이
@@ -115,4 +115,56 @@ describe("docToText — 새 블록 타입 텍스트 보존", () => {
     };
     expect(docToText(doc)).toBe("제목깊은 텍스트");
   });
+});
+
+// T3 — 표(table) 특례: tableRow는 셀을 공백으로, table은 행을 줄바꿈으로 잇는다.
+// 특례가 없으면 셀 텍스트가 구분자 없이 뭉개진다("이름역할감PM") — 검색·미리보기 품질 저하.
+
+const tableDoc: EditorDoc = {
+  type: "doc",
+  content: [
+    {
+      type: "table",
+      content: [
+        {
+          type: "tableRow",
+          content: [
+            {
+              type: "tableHeader",
+              content: [{ type: "paragraph", content: [{ type: "text", text: "이름" }] }],
+            },
+            {
+              type: "tableHeader",
+              content: [{ type: "paragraph", content: [{ type: "text", text: "역할" }] }],
+            },
+          ],
+        },
+        {
+          type: "tableRow",
+          content: [
+            {
+              type: "tableCell",
+              content: [{ type: "paragraph", content: [{ type: "text", text: "감" }] }],
+            },
+            {
+              type: "tableCell",
+              content: [{ type: "paragraph", content: [{ type: "text", text: "PM" }] }],
+            },
+          ],
+        },
+      ],
+    },
+  ],
+};
+
+test("표는 셀=공백·행=줄바꿈으로 투영된다", () => {
+  expect(docToText(tableDoc)).toBe("이름 역할\n감 PM");
+});
+
+// docToPreview는 top-level 블록 하나(표 전체)에서 whitespace(개행 포함)를 전부
+// 한 칸으로 접는다 — toggle·blockquote 등 다른 다중 문단 블록과 동일한 기존 규칙
+// (§ docToPreview 주석 "블록 안 hardBreak·연속 공백은 한 칸으로"). 표도 예외가
+// 아니므로 모든 행이 한 줄로 이어져 보인다(첫 행만 자르지 않는다).
+test("미리보기는 표 전체를 한 줄로 접어 보여준다(행 구분 없이)", () => {
+  expect(docToPreview(tableDoc)).toBe("이름 역할 감 PM");
 });

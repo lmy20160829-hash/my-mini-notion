@@ -32,7 +32,11 @@ export function textToDoc(text: string): EditorDoc {
 /** 노드 내부의 텍스트를 재귀로 모은다(미래의 중첩 블록도 텍스트는 보존). */
 function nodeText(node: EditorNode): string {
   if (node.type === "text") return node.text ?? "";
-  return (node.content ?? []).map(nodeText).join("");
+  const children = node.content ?? [];
+  // 표 특례: 행은 셀을 공백으로, 표는 행을 줄바꿈으로 잇는다(검색·미리보기 품질).
+  if (node.type === "tableRow") return children.map(nodeText).join(" ");
+  if (node.type === "table") return children.map(nodeText).join("\n");
+  return children.map(nodeText).join("");
 }
 
 /**
