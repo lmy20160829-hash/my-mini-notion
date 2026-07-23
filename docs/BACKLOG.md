@@ -67,6 +67,33 @@
 
 ---
 
+## 에디터 후속 개선 (2026-07-23 최종 whole-branch 리뷰)
+
+**상태:** 후보 (문서 작업 스프린트 최종 리뷰가 잡은 Minor — merge-blocking 아님, follow-up).
+
+이번 스프린트는 513 테스트/빌드 그린으로 머지됐고, 최종 리뷰에서 Critical/Important 0건이었다.
+아래는 무해하지만 다듬을 여지가 있는 항목들이다.
+
+- **표 셀 텍스트 선택 시 BubbleMenu 2개 겹침** — 표 셀 안에서 텍스트를 범위 선택하면
+  `isActive("table")`이면서 `from!==to`라 플로팅 서식 툴바(`FormatToolbar`, `fmtShouldShow`)와
+  표 툴바(`TableToolbar`, `shouldShow`)가 **둘 다 placement "top"으로 동시에** 뜬다(offset 6 vs 8).
+  pluginKey가 달라(`fmtBar`/`tblBar`) 크래시는 없지만 시각적으로 겹친다. 해법: 표 안에서는
+  FormatToolbar를 억제하거나 placement/offset을 분리.
+- **링크 미니입력 로직 중복** — `components/editor/TopToolbar.tsx`와 `FormatToolbar.tsx`에
+  링크 state/포커스/Enter적용·Esc닫기/`.fmt-link-input` 마크업이 verbatim 복제됐다. `useLinkInput`
+  훅으로 추출하되, TopToolbar 쪽은 색 팝오버와 상호배제(`openLinkInput`이 색 팝오버를 닫음)를
+  더 갖고 있어 순수 lift가 아니므로 그 좌표까지 훅이 받게 설계해야 한다.
+- **색 팝오버 Escape/외부클릭 닫힘 보강** — `.top-toolbar__popover`의 `onKeyDown` Escape는
+  내부 버튼이 `onMouseDown preventDefault`로 포커스를 안 받아 사실상 발화하지 않고, 문서 레벨
+  outside-click 리스너도 없어 다른 툴바 버튼 클릭 시 팝오버가 남는다(닫는 경로는 스와치 클릭·색
+  버튼 재클릭으로 존재). 아이콘 팝오버(§2.7)의 ESC·바깥클릭 관례에 맞추면 일관된다.
+- **슬래시 메뉴의 셀 컨텍스트 미인지** — `isBlockAvailable`이 전역 `schema.nodes[type]`만
+  검사해서, 표 셀 안에서 `/제목1`은 셀 content(문단/목록만)에 막혀 조용히 no-op, `/표`는 중첩
+  대신 doc 형제로 떨어진다. 스키마 불변식은 지켜지고 데이터 손상은 없으므로(테스트로 잠금)
+  문서화만 하거나, 셀 안에서 슬래시 항목을 content-aware로 거르는 개선 여지.
+
+---
+
 ## 고아 첨부 정리 (post-attachments 버킷)
 
 **상태:** 후보 — **착수 조건 충족됨** (첨부 기능 배포 완료, 2026-07-22).
