@@ -172,6 +172,5 @@ describe("insertBlock (단일 삽입 함수)", () => {
     const tableSpec = BLOCKS.find((b) => b.id === "table")!;
     expect(insertBlock(e, tableSpec)).toBe(true);
     expect(e.getHTML()).toContain("<table");
-    e.destroy();
   });
 });
