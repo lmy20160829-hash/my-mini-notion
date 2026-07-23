@@ -66,6 +66,20 @@ function applyStyle(editor: Editor, value: StyleValue): void {
   }
 }
 
+/** 글자 크기 — FontSize(TextStyle 전제, marks.ts). 빈 값은 기본(unset). */
+const SIZE_OPTIONS: { value: string; label: string }[] = [
+  { value: "", label: "기본" },
+  { value: "13px", label: "작게" },
+  { value: "20px", label: "크게" },
+  { value: "28px", label: "제목" },
+];
+
+function applyFontSize(editor: Editor, value: string): void {
+  const chain = editor.chain().focus();
+  if (value) chain.setFontSize(value).run();
+  else chain.unsetFontSize().run();
+}
+
 const ALIGN_ACTIONS: { value: "left" | "center" | "right"; title: string; icon: LucideIcon }[] = [
   { value: "left", title: "왼쪽 정렬", icon: AlignLeft },
   { value: "center", title: "가운데 정렬", icon: AlignCenter },
@@ -104,6 +118,12 @@ export function TopToolbarContent({ editor }: { editor: Editor }) {
       if (e.isActive("blockquote")) return "blockquote";
       return "paragraph";
     },
+  });
+
+  // 글자 크기 — 현재 선택의 textStyle.fontSize(없으면 기본 ""). SIZE_OPTIONS 매칭.
+  const fontSize = useEditorState({
+    editor,
+    selector: ({ editor: e }) => (e.getAttributes("textStyle").fontSize as string) ?? "",
   });
 
   // 목록 활성 상태 — 마크·정렬과 같은 방식으로 버튼에 is-active를 반영.
@@ -153,6 +173,19 @@ export function TopToolbarContent({ editor }: { editor: Editor }) {
       >
         {STYLE_OPTIONS.map((o) => (
           <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+      </select>
+
+      <select
+        className="top-toolbar__select"
+        aria-label="글자 크기"
+        value={SIZE_OPTIONS.some((o) => o.value === fontSize) ? fontSize : ""}
+        onChange={(e) => applyFontSize(editor, e.target.value)}
+      >
+        {SIZE_OPTIONS.map((o) => (
+          <option key={o.value || "default"} value={o.value}>
             {o.label}
           </option>
         ))}

@@ -1055,7 +1055,7 @@ hr.blk-hr.ProseMirror-selectednode { border-top-color: var(--border-focus); }
 
 /* ---------- 표 (①, §2.15) ---------- */
 .tbl { border-collapse: collapse; table-layout: fixed; width: 100%; margin: 12px 0; overflow: hidden; }
-.tbl td, .tbl th { border: 1px solid var(--border-default); padding: 6px 10px; vertical-align: top; position: relative; }
+.tbl td, .tbl th { border: 1px solid var(--border-default); padding: 6px 10px; height: 34px; min-width: 48px; vertical-align: top; position: relative; }
 .tbl th { background: var(--surface-subtle); font-weight: 600; text-align: left; }
 .tbl .selectedCell::after { content: ""; position: absolute; inset: 0; background: var(--accent-soft); mix-blend-mode: multiply; pointer-events: none; }
 .tbl .column-resize-handle { position: absolute; right: -2px; top: 0; bottom: 0; width: 4px; background: var(--accent); cursor: col-resize; }

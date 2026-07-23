@@ -5,7 +5,7 @@ import Underline from "@tiptap/extension-underline";
 import Strike from "@tiptap/extension-strike";
 import Code from "@tiptap/extension-code";
 import Link from "@tiptap/extension-link";
-import { TextStyle } from "@tiptap/extension-text-style";
+import { TextStyle, FontSize } from "@tiptap/extension-text-style";
 import Color from "@tiptap/extension-color";
 import Highlight from "@tiptap/extension-highlight";
 
@@ -24,6 +24,8 @@ import Highlight from "@tiptap/extension-highlight";
  *   확인: editor.getAttributes("textStyle").color.
  * - Highlight(배경색/형광펜)는 multicolor:true — toggleHighlight({ color })로
  *   임의 hex 색을 적용한다. 확인: editor.isActive("highlight", { color }).
+ * - FontSize(글자 크기)도 TextStyle 전제 — setFontSize("20px")/unsetFontSize().
+ *   확인: editor.getAttributes("textStyle").fontSize.
  */
 export const MARKS: AnyExtension[] = [
   Bold,
@@ -35,6 +37,7 @@ export const MARKS: AnyExtension[] = [
   TextStyle,
   Color,
   Highlight.configure({ multicolor: true }),
+  FontSize,
 ];
 
 /**

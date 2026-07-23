@@ -56,6 +56,14 @@ describe("Color/Highlight (C1 — 글자색·배경색)", () => {
     editor.chain().focus().insertContent("가").selectAll().toggleHighlight({ color: "#fff6d6" }).run();
     expect(editor.isActive("highlight", { color: "#fff6d6" })).toBe(true);
   });
+
+  test("setFontSize로 글자 크기가 적용되고 unsetFontSize로 해제된다", () => {
+    const editor = makeEditor();
+    editor.chain().focus().insertContent("가").selectAll().setFontSize("20px").run();
+    expect(editor.getAttributes("textStyle").fontSize).toBe("20px");
+    editor.chain().focus().selectAll().unsetFontSize().run();
+    expect(editor.getAttributes("textStyle").fontSize).toBeUndefined();
+  });
 });
 
 describe("applyLink (링크 적용·해제)", () => {
