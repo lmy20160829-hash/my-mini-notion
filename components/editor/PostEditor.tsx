@@ -10,6 +10,7 @@ import { docToText, type EditorDoc } from "@/lib/editor/doc";
 import { MARKS } from "@/lib/editor/marks";
 import { NODES } from "@/lib/editor/nodes";
 import { MEDIA_NODES, mediaEditorProps } from "@/lib/editor/media-nodes";
+import { TABLE_NODES } from "@/lib/editor/table-nodes";
 import { EditorDragHandle } from "@/components/editor/DragHandle";
 import { FormatToolbar } from "@/components/editor/FormatToolbar";
 import { SlashMenu } from "@/components/editor/SlashMenu";
@@ -53,6 +54,7 @@ export function PostEditor({
       ...MARKS,
       ...NODES,
       ...MEDIA_NODES,
+      ...TABLE_NODES,
     ],
     content: initialDoc,
     editorProps: {

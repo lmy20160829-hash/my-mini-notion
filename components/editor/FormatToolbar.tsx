@@ -3,17 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import type { EditorState } from "@tiptap/pm/state";
 import { BubbleMenu } from "@tiptap/react/menus";
-import { useEditorState, type Editor } from "@tiptap/react";
-import {
-  Bold,
-  Code,
-  Italic,
-  Link2,
-  Strikethrough,
-  Underline,
-  type LucideIcon,
-} from "lucide-react";
+import type { Editor } from "@tiptap/react";
+import { Link2 } from "lucide-react";
 import { applyLink } from "@/lib/editor/marks";
+import { MARK_ACTIONS, useFormatState } from "@/lib/editor/useFormatState";
 
 /**
  * ① 플로팅 서식 툴바 — 텍스트 선택 시에만 뜨는 말풍선(§2.10, §6.8).
@@ -42,22 +35,6 @@ export function fmtShouldShow({
   return state.doc.textBetween(from, to).length > 0;
 }
 
-type MarkAction = {
-  name: string;
-  title: string;
-  icon: LucideIcon;
-  run: (editor: Editor) => void;
-};
-
-/** 마크 5종 토글(링크는 미니 입력이라 별도 처리). 단축키는 확장 기본값. */
-const MARK_ACTIONS: MarkAction[] = [
-  { name: "bold", title: "굵게", icon: Bold, run: (e) => e.chain().focus().toggleBold().run() },
-  { name: "italic", title: "기울임", icon: Italic, run: (e) => e.chain().focus().toggleItalic().run() },
-  { name: "underline", title: "밑줄", icon: Underline, run: (e) => e.chain().focus().toggleUnderline().run() },
-  { name: "strike", title: "취소선", icon: Strikethrough, run: (e) => e.chain().focus().toggleStrike().run() },
-  { name: "code", title: "코드", icon: Code, run: (e) => e.chain().focus().toggleCode().run() },
-];
-
 /**
  * 툴바 내용(버튼 줄 + 링크 미니 입력).
  * BubbleMenu 래퍼와 분리해 jsdom 에서도 내용을 단독 검증한다.
@@ -67,18 +44,8 @@ export function FormatToolbarContent({ editor }: { editor: Editor }) {
   const [linkValue, setLinkValue] = useState("");
   const linkInputRef = useRef<HTMLInputElement>(null);
 
-  // 활성 마크 상태 — 트랜잭션마다 selector 로 다시 계산해 리렌더한다.
-  const active = useEditorState({
-    editor,
-    selector: ({ editor: e }) => ({
-      bold: e.isActive("bold"),
-      italic: e.isActive("italic"),
-      underline: e.isActive("underline"),
-      strike: e.isActive("strike"),
-      code: e.isActive("code"),
-      link: e.isActive("link"),
-    }),
-  });
+  // 활성 마크 상태 — 상단 툴바와 공유하는 useFormatState(트랜잭션마다 재계산).
+  const active = useFormatState(editor);
 
   useEffect(() => {
     if (linkOpen) linkInputRef.current?.focus();
