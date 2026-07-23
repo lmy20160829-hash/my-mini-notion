@@ -3,7 +3,7 @@ import type { Editor } from "@tiptap/react";
 import { TEXT_COLORS, HIGHLIGHT_COLORS, type Swatch } from "@/lib/editor/palette";
 
 /**
- * C3 색 팝오버 — 상단 툴바(Phase B, 미구현)가 여는 스와치 그리드.
+ * C3 색 팝오버 — 상단 툴바(Phase B, §2.14 — 결선 완료)가 여는 스와치 그리드.
  * `kind="text"` → 글자색(`TEXT_COLORS`, `setColor`/`unsetColor`).
  * `kind="highlight"` → 배경색(`HIGHLIGHT_COLORS`, `toggleHighlight`/`unsetHighlight`).
  * 각 배열의 첫 항목(`value: null`)이 "기본"/"없음" — 해제(unset) 액션이다.

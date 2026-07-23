@@ -8,20 +8,28 @@
 | 단계 | 결과 |
 |---|---|
 | Phase 0 | ✅ 의존성 설치(표·색·정렬 Tiptap 확장, 전부 MIT 실측) + 결합부·공용 훅(`useFormatState`) 정리 |
-| Phase T (표, wt-table 순차) | ✅ 표 노드 4종 등록(리사이즈·헤더 행·셀 content 제한) → 슬래시 `/표` 결선 → `docToText`/`docToPreview` 표 투영 특례(셀=공백·행=줄바꿈, 미리보기는 첫 행만) → 표 셀 플로팅 툴바(행/열 삽입·삭제·헤더 토글) → CSS |
-| Phase F (색·정렬, wt-color/wt-align 병렬) | ✅ 색 팔레트 8+8(`TEXT_COLORS`/`HIGHLIGHT_COLORS`) → Color/Highlight/TextStyle 마크 등록 → 색 팝오버(스와치 그리드) → 문단·제목 정렬(`TextAlign`, 좌/중/우) |
-| Phase B (상단 고정 툴바, 메인 머지 후) | ✅ 스타일 드롭다운(일반/제목1~3/인용)·마크 4종·색 2종·정렬 3종·목록 3종·링크·이미지·표·undo/redo를 한 줄에 결선, `PostEditor` sticky 통합 |
-| B3 (이 세션 — 통합 검증·문서 마감) | ✅ 표 문서 dual-write 관통 테스트 추가(`__tests__/store.test.tsx`), `DESIGN.md` §6.10 카피 마감, BACKLOG·HANDOVER 갱신 |
+| Phase T (표) | ✅ 표 노드 4종 등록(리사이즈·헤더 행·셀 content 제한) → 슬래시 `/표` 결선 → `docToText`/`docToPreview` 표 투영 특례(셀=공백·행=줄바꿈, 미리보기는 첫 행만) → 표 셀 플로팅 툴바(행/열 삽입·삭제·헤더 토글) → CSS |
+| Phase F (색·정렬) | ✅ 색 팔레트 8+8(`TEXT_COLORS`/`HIGHLIGHT_COLORS`) → Color/Highlight/TextStyle 마크 등록 → 색 팝오버(스와치 그리드) → 문단·제목 정렬(`TextAlign`, 좌/중/우) |
+| Phase B (상단 고정 툴바) | ✅ 스타일 드롭다운(일반/제목1~3/인용)·마크 4종·색 2종·정렬 3종·목록 3종·링크·이미지·표·undo/redo를 한 줄에 결선, `PostEditor` sticky 통합 |
+| B3 (이 세션 — 통합 검증·문서 마감) | ✅ 표 문서 dual-write 관통 테스트 추가(`__tests__/store.test.tsx`), `DESIGN.md` §6.8·§6.10 카피 마감, BACKLOG·HANDOVER 갱신 |
 | 검증 | ✅ **63파일/513 테스트 + 빌드** 통과(신규 테스트 1건 = 513, 기존 512 그린 유지) |
 | 커밋 범위 | `e847cb5`(스펙 승인)~`9accb12`(B2, 상단 툴바 PostEditor 결합) + 이 세션의 B3 마감 커밋 |
 | dev 육안 체크리스트 | ⏸ **미실행** — 브리프 지시(B3은 테스트·문서까지, dev 체크·최종 push는 컨트롤러가 Phase B 게이트에서 사용자와 함께 진행) |
+
+**실행 방식(정정 — 리뷰 지적 반영):** Phase T·F는 워크트리 병렬 진행을 계획했으나(스펙
+§실행 순서), 색·정렬·표가 추가하는 CSS가 `globals.css` 파일 끝을 공유해 병렬 워크트리
+머지 시 충돌 위험이 있다고 판단, 컨트롤러가 브랜치 `004-supabase-google-login` 위에서
+**순차 선형**으로 진행했다. `git worktree list`·`git log` 커밋 시각 실측 결과 이번
+스프린트에 워크트리 체크아웃·머지 커밋은 전혀 없다(전부 004 위 단일 커밋 히스토리) —
+이전 인수인계에 있던 "워크트리 3개 병렬 진행" 서술은 계획 문구를 잘못 실행 기록으로
+옮긴 오류였다.
 
 ## 다음 스프린트: 데이터베이스 (테이블·보드 뷰) — BACKLOG 1순위
 
 선행 인프라(content_doc 블록 모델, parent_id 중첩, 이번 스프린트의 표 노드까지) 완비.
 착수 시 별도 spec → plan → 구현 사이클. 브레인스토밍부터 시작할 것. (주의: 이 항목의
 "테이블"은 노션식 데이터베이스/속성 시스템이며, 이번 스프린트의 Tiptap 문서 내 표와는
-별개 기능 — `docs/BACKLOG.md` 해당 항목 각주 참고.)
+별개 기능 — `docs/BACKLOG.md` "데이터베이스" 항목의 각주 참고.)
 
 ## 이번 스프린트 비범위 (BACKLOG 신규 4건)
 
