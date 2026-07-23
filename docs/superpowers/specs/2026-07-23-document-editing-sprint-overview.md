@@ -94,6 +94,9 @@
 - **노드**: `lib/editor/table-nodes.ts`에 `Table.configure({ resizable: true })` +
   `TableRow` + `TableHeader` + `TableCell`을 배열로 export(`TABLE_NODES`).
   `PostEditor.tsx` 결합부에 `...TABLE_NODES` spread(Phase 0에서 추가).
+  `TableHeader`/`TableCell`의 `content`는
+  `"(paragraph | bulletList | orderedList | taskList)+"`로 제한 — 셀 안 문단·목록·
+  텍스트 서식만 허용, 표 중첩·기타 블록 차단(§8, 승인).
 - **레지스트리**: `blocks.ts`에 `{ id: "table", type: "table", label: "표",
   keywords: ["표", "table", "그리드", "grid"] }` 추가 + `__tests__/editor-blocks.test.ts`
   **같은 커밋 갱신**(계약 파일).
@@ -186,7 +189,9 @@ design-md-sync·commit-hygiene) 전 과정 준수. 이번 스프린트는 Supaba
 - **색 인라인 style CSP** — Tiptap Color/Highlight는 `style="color:…"` 인라인.
   현 앱은 아티팩트 CSP 대상이 아니므로 무관하나, 값은 팔레트 hex 상수로 고정해
   임의 색 입력을 막는다(팝오버 스와치만 노출).
-- **표 셀 안의 블록** — 표 셀은 문단만 허용(`content: "paragraph+"`)해 셀 안 표
-  중첩·블록 폭주를 막는다. 셀 안 텍스트 서식(마크)은 허용.
+- **표 셀 안의 블록(승인)** — 셀은 **문단 + 목록 3종(불릿·번호·체크박스)**까지 허용하고
+  텍스트 서식(마크)도 허용한다. **표 중첩·이미지·콜아웃·토글 등 기타 블록은 차단**해
+  셀 안 폭주를 막는다. `TableCell`/`TableHeader`의 `content`를
+  `"(paragraph | bulletList | orderedList | taskList)+"`로 제한한다.
 - **상단 툴바 sticky와 `.detail-charcount`(bottom sticky) 공존** — top/bottom이라
   직접 충돌 없음. 같은 스크롤 컨테이너 공유만 확인.
