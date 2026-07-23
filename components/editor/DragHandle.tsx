@@ -226,7 +226,10 @@ export function EditorDragHandle({ editor }: { editor: Editor | null }) {
   const closeMenu = useCallback(() => {
     setMenuOpen(false);
     if (editor && !editor.isDestroyed) {
-      editor.commands.unlockDragHandle();
+      // lock/unlockDragHandle 커맨드는 @tiptap/extension-drag-handle(base)이 제공하는데,
+      // react <DragHandle>는 plugin만 등록하고 이 커맨드는 안 만든다(base 미등록).
+      // 커맨드가 없으면 스킵해 크래시를 막는다(핸들 고정은 base 등록이 선행 — BACKLOG).
+      editor.commands.unlockDragHandle?.();
       editor.commands.focus();
     }
   }, [editor]);
@@ -259,7 +262,7 @@ export function EditorDragHandle({ editor }: { editor: Editor | null }) {
             closeMenu();
           } else {
             setMenuOpen(true);
-            editor.commands.lockDragHandle();
+            editor.commands.lockDragHandle?.();
           }
         }}
       >
