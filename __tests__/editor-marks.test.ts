@@ -44,6 +44,20 @@ describe("MARKS 등록", () => {
   });
 });
 
+describe("Color/Highlight (C1 — 글자색·배경색)", () => {
+  test("setColor로 글자색 마크가 적용된다", () => {
+    const editor = makeEditor();
+    editor.chain().focus().insertContent("가").selectAll().setColor("#f0483e").run();
+    expect(editor.getAttributes("textStyle").color).toBe("#f0483e");
+  });
+
+  test("toggleHighlight로 배경색 마크가 적용된다(multicolor)", () => {
+    const editor = makeEditor();
+    editor.chain().focus().insertContent("가").selectAll().toggleHighlight({ color: "#fff6d6" }).run();
+    expect(editor.isActive("highlight", { color: "#fff6d6" })).toBe(true);
+  });
+});
+
 describe("applyLink (링크 적용·해제)", () => {
   test("URL을 주면 선택 영역에 링크 마크를 적용한다", () => {
     const editor = makeEditor();
