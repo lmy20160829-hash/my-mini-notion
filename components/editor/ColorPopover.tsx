@@ -20,7 +20,7 @@ export function ColorPopover({ editor, kind }: { editor: Editor; kind: "text" | 
     }
   };
   return (
-    <div className="clr-pop" role="listbox" aria-label={kind === "text" ? "글자색" : "배경색"}>
+    <div className="clr-pop" role="group" aria-label={kind === "text" ? "글자색" : "배경색"}>
       {swatches.map((s) => (
         <button
           key={s.id}
