@@ -1060,3 +1060,28 @@ hr.blk-hr.ProseMirror-selectednode { border-top-color: var(--border-focus); }
 /* 표 셀 플로팅 툴바 — 카드 팝오버 관례(§2.10 .fmt-bar와 동일) */
 .tbl-toolbar { display: inline-flex; gap: 2px; padding: 4px; background: var(--surface-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); animation: mnPop 0.14s var(--ease-out); }
 @media (prefers-reduced-motion: reduce) { .tbl-toolbar { animation: none; } }
+
+/* ---------- 색 팝오버 (C3, §2.16) ---------- */
+/* 카드 팝오버 관례(§2.10 .fmt-bar / §2.15 .tbl-toolbar와 동일 토큰) + 4열 스와치 그리드. */
+.clr-pop {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; padding: 10px;
+  background: var(--surface-card); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg); box-shadow: var(--shadow-lg);
+  animation: mnPop 0.14s var(--ease-out);
+}
+.clr-swatch {
+  width: 28px; height: 28px; padding: 0; border: none; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-sm); background: var(--surface-subtle);
+  box-shadow: inset 0 0 0 1px var(--border-subtle);
+  transition: box-shadow var(--dur-fast) var(--ease-standard);
+}
+.clr-swatch:hover, .clr-swatch:focus-visible {
+  box-shadow: inset 0 0 0 1px var(--border-subtle), 0 0 0 2px var(--border-focus);
+  outline: none;
+}
+.clr-swatch__none { font-size: 12px; line-height: 1; color: var(--text-muted); }
+/* §7 TODO 준수: 팝오버 등장 mnPop도 reduced-motion 에서 끈다. */
+@media (prefers-reduced-motion: reduce) {
+  .clr-pop { animation: none; }
+}
