@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 import { AppProvider, useApp } from "@/lib/store";
+import { buildEditPatch } from "@/components/editor/PostEditor";
+import { docToText, type EditorDoc } from "@/lib/editor/doc";
 
 // 인증은 Supabase 세션(useAuth)이 담당한다. 세션을 테스트에서 바꿀 수 있도록 가변 상태로 목킹.
 const auth = vi.hoisted(() => ({
@@ -395,6 +397,80 @@ describe("updatePost 디바운스 저장 (US4)", () => {
       expect(updateQuery.update).toHaveBeenCalledWith({
         content: "블록 본문",
         content_doc: doc,
+      });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  // B3 — 통합 검증: 표를 포함한 문서도 dual-write(content + content_doc)가 관통하는지
+  // PostEditor.buildEditPatch(실제 저장 페이로드 생성 지점)를 통해 확인한다.
+  // 표 투영 특례(셀=공백·행=줄바꿈)는 editor-doc-blocks.test.ts가 이미 잠갔으므로,
+  // 여기서는 그 특례를 낳는 실제 문서로 store 왕복 + 불변식만 검증한다.
+  test("표를 포함한 content_doc도 dual-write 되고 docToText(content_doc)===content 불변식을 지킨다(B3)", async () => {
+    vi.useFakeTimers();
+    try {
+      enqueue({ data: [row(1, "원래 제목")], error: null });
+      const { result } = mountStore();
+      await vi.waitFor(() => expect(result.current.loaded).toBe(true));
+
+      const tableDoc: EditorDoc = {
+        type: "doc",
+        content: [
+          {
+            type: "table",
+            content: [
+              {
+                type: "tableRow",
+                content: [
+                  {
+                    type: "tableHeader",
+                    content: [{ type: "paragraph", content: [{ type: "text", text: "이름" }] }],
+                  },
+                  {
+                    type: "tableHeader",
+                    content: [{ type: "paragraph", content: [{ type: "text", text: "역할" }] }],
+                  },
+                ],
+              },
+              {
+                type: "tableRow",
+                content: [
+                  {
+                    type: "tableCell",
+                    content: [{ type: "paragraph", content: [{ type: "text", text: "감" }] }],
+                  },
+                  {
+                    type: "tableCell",
+                    content: [{ type: "paragraph", content: [{ type: "text", text: "PM" }] }],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+
+      // 실제 저장 페이로드 생성 지점(components/editor/PostEditor.tsx)을 그대로 쓴다 —
+      // store가 아니라 buildEditPatch가 계약(content=docToText(contentDoc))을 만든다.
+      const patch = buildEditPatch(tableDoc);
+      expect(docToText(tableDoc)).toBe(patch.content); // 불변식(스펙 §3) 자체도 재확인
+      expect(patch.content).toBe("이름 역할\n감 PM"); // T3 표 투영 특례가 반영된 값
+
+      act(() => {
+        result.current.updatePost("1", patch);
+      });
+
+      enqueue({ data: [{ id: 1 }], error: null });
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(600);
+      });
+
+      // 저장 페이로드에 content(투영)와 content_doc(표 JSON)이 함께 담겨야 한다(dual-write).
+      const updateQuery = queries[queries.length - 1];
+      expect(updateQuery.update).toHaveBeenCalledWith({
+        content: "이름 역할\n감 PM",
+        content_doc: tableDoc,
       });
     } finally {
       vi.useRealTimers();
