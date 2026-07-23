@@ -20,6 +20,7 @@ import {
   Minus,
   Paperclip,
   Quote,
+  Table,
   Type,
   type LucideIcon,
 } from "lucide-react";
@@ -54,6 +55,7 @@ const BLOCK_ICONS: Record<string, LucideIcon> = {
   horizontalRule: Minus,
   image: ImageIcon,
   fileBlock: Paperclip,
+  table: Table,
 };
 
 type MenuState = {

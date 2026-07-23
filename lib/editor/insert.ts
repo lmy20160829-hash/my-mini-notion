@@ -74,6 +74,8 @@ export function insertBlock(editor: Editor, spec: BlockSpec): boolean {
         spec.type === "image" ? IMAGE_ACCEPT : FILE_ACCEPT
       );
       return true;
+    case "table":
+      return chain().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
     default:
       return chain().insertContent({ type: spec.type, attrs: spec.attrs }).run();
   }

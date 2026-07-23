@@ -6,6 +6,7 @@ import Text from "@tiptap/extension-text";
 import StarterKit from "@tiptap/starter-kit";
 import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
+import { TABLE_NODES } from "@/lib/editor/table-nodes";
 import { BLOCKS, type BlockSpec } from "@/lib/editor/blocks";
 import {
   filterBlocks,
@@ -34,6 +35,28 @@ function fullEditor() {
   const editor = new Editor({
     element: document.createElement("div"),
     extensions: [StarterKit, TaskList, TaskItem],
+    content: "<p></p>",
+  });
+  editors.push(editor);
+  return editor;
+}
+
+/**
+ * T1 실측 교훈: TABLE_NODES의 셀 content 제한
+ * "(paragraph | bulletList | orderedList | taskList)+"가 참조하는 노드가
+ * 스키마에 없으면 ProseMirror 스키마 빌드 자체가 throw한다. StarterKit이
+ * BulletList/OrderedList/ListItem을 이미 담고 있으므로, 여기서는
+ * TaskList/TaskItem(nested)만 더해 표 삽입을 흉내낸다.
+ */
+function makeEditorWithTable() {
+  const editor = new Editor({
+    element: document.createElement("div"),
+    extensions: [
+      StarterKit,
+      TaskList,
+      TaskItem.configure({ nested: true }),
+      ...TABLE_NODES,
+    ],
     content: "<p></p>",
   });
   editors.push(editor);
@@ -142,5 +165,13 @@ describe("insertBlock (단일 삽입 함수)", () => {
     insertBlock(editor, spec("heading1"));
     expect(insertBlock(editor, spec("paragraph"))).toBe(true);
     expect(editor.getJSON().content?.[0]?.type).toBe("paragraph");
+  });
+
+  test("표 spec 삽입 시 헤더 행 포함 표가 생긴다", () => {
+    const e = makeEditorWithTable(); // Document/Paragraph/Text + TABLE_NODES
+    const tableSpec = BLOCKS.find((b) => b.id === "table")!;
+    expect(insertBlock(e, tableSpec)).toBe(true);
+    expect(e.getHTML()).toContain("<table");
+    e.destroy();
   });
 });

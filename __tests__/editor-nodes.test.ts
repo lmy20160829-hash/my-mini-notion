@@ -10,8 +10,10 @@ import { NODES } from "@/lib/editor/nodes";
 import { docToText, type EditorDoc } from "@/lib/editor/doc";
 
 // wt2 ④ 블록 타입(스펙 2026-07-21-editor-wt2-design.md) —
-// lib/editor/nodes.ts 가 blocks.ts 계약의 노드(이미지·파일 제외 11종)를 등록한다.
-// 에디터는 PostEditor 결합부(P1 기본 확장 + NODES)를 그대로 재현해 만든다.
+// lib/editor/nodes.ts 가 blocks.ts 계약의 노드(이미지·파일·표 제외 11종)를 등록한다.
+// 이미지·파일은 wt3 소유(media-nodes.ts), 표는 별도 파일(table-nodes.ts, Phase T)
+// 소유라 여기 NODES 배열에는 없다. 에디터는 PostEditor 결합부(P1 기본 확장 + NODES)를
+// 그대로 재현해 만든다.
 
 const editors: Editor[] = [];
 
@@ -43,10 +45,10 @@ afterEach(() => {
 });
 
 describe("노드 등록 (blocks.ts 계약)", () => {
-  test("계약 13종 중 image·fileBlock(wt3 소유)을 뺀 11종이 스키마에 존재한다", () => {
+  test("계약 14종 중 image·fileBlock(wt3 소유)·table(table-nodes.ts 소유)을 뺀 11종이 스키마에 존재한다", () => {
     const editor = makeEditor();
     const wt2Blocks = BLOCKS.filter(
-      (b) => b.type !== "image" && b.type !== "fileBlock"
+      (b) => b.type !== "image" && b.type !== "fileBlock" && b.type !== "table"
     );
     expect(wt2Blocks).toHaveLength(11);
     for (const b of wt2Blocks) {
@@ -54,6 +56,7 @@ describe("노드 등록 (blocks.ts 계약)", () => {
     }
     expect(editor.schema.nodes.image).toBeUndefined();
     expect(editor.schema.nodes.fileBlock).toBeUndefined();
+    expect(editor.schema.nodes.table).toBeUndefined();
   });
 
   test("heading은 level 1–3만 허용한다", () => {

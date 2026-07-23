@@ -36,4 +36,5 @@ export const BLOCKS: BlockSpec[] = [
   { id: "horizontalRule", type: "horizontalRule", label: "구분선", keywords: ["구분선", "divider", "hr"] },
   { id: "image", type: "image", label: "이미지", keywords: ["이미지", "사진", "image", "img"] },
   { id: "fileBlock", type: "fileBlock", label: "파일", keywords: ["파일", "첨부", "file", "attachment"] },
+  { id: "table", type: "table", label: "표", keywords: ["표", "table", "그리드", "grid"] },
 ];

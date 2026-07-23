@@ -19,10 +19,11 @@ const CONTRACT: Array<Pick<BlockSpec, "type"> & Partial<BlockSpec>> = [
   { type: "horizontalRule" },
   { type: "image" },
   { type: "fileBlock" },
+  { type: "table" },
 ];
 
 describe("BLOCKS 레지스트리", () => {
-  test("계약된 13개 항목(노드 타입 × 속성)이 전부 선언돼 있다", () => {
+  test("계약된 14개 항목(노드 타입 × 속성)이 전부 선언돼 있다", () => {
     for (const item of CONTRACT) {
       const found = BLOCKS.find(
         (b) =>
@@ -42,5 +43,12 @@ describe("BLOCKS 레지스트리", () => {
       expect(b.label.length).toBeGreaterThan(0);
       expect(b.keywords.length).toBeGreaterThan(0);
     }
+  });
+
+  test("표 블록이 레지스트리에 등재돼 있다", () => {
+    const table = BLOCKS.find((b) => b.id === "table");
+    expect(table).toBeDefined();
+    expect(table!.type).toBe("table");
+    expect(table!.keywords).toContain("표");
   });
 });
