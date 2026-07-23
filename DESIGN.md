@@ -1355,6 +1355,17 @@ wt2 ④ — `lib/editor/blocks.ts` 계약 14종 중 이미지·파일(wt3 소유
   - 영구 삭제(§4.5): 글 행 삭제 확정 **후** `deletePostAttachments(userId, postId)`를 비동기 호출(결과 무시). 폴더 list → 일괄 remove.
   - **정리 실패 = 고아 첨부**: `console.error("[attachments] 고아 첨부 발생: {postId}/{경로}", 원인)` 고정 포맷 로깅만 하고 **절대 throw 하지 않는다**(글 삭제 흐름 비차단). 주기 정리는 `docs/BACKLOG.md` "고아 첨부 정리" 담당 — 로그 포맷을 고정해 로그·Storage 대조로 고아 목록을 재구성할 수 있게 한다.
 
+### 5.14 문단·제목 정렬 동작 (A1 — `lib/editor/nodes.ts`, A2 — 렌더 확인·CSS)
+
+- **확장:** `TextAlign.configure({ types: ["heading", "paragraph"] })`(A1) — 정렬 attrs가 붙는 대상은 문단·제목(h1~h3)뿐이다. 목록 항목·인용·콜아웃·토글 자체는 대상 밖이지만, 그 안에 중첩된 문단은 `paragraph` 노드이므로 똑같이 정렬 가능하다.
+- **값:** `left`(기본값, attrs `null`) · `center` · `right` · `justify`(확장 기본 `alignments` — 별도 제한 없음). `editor.commands.setTextAlign(value)`가 대상 노드에 `updateAttributes({ textAlign: value })`, `unsetTextAlign()`이 `null`로 되돌린다.
+- **저장:** `textAlign`은 문서 노드 attrs라 dual-write(§5.2)를 그대로 타고 `content_doc`에 영속된다 — 새 컬럼·별도 저장 로직 없이 서버 왕복·새로고침 후에도 유지된다.
+- **렌더(CSS 불필요 — A2 확인):** TextAlign의 `renderHTML`이 값이 있을 때만 `style="text-align: {value}"`를 해당 `<p>`/`<h1~h3>`에 직접 부여한다(`null`이면 style 자체를 안 붙여 기본 좌측 정렬과 시각적으로 동일). Paragraph/Heading 확장 모두 표준 `renderHTML({ HTMLAttributes })` 패턴이라 core가 attrs→style 변환을 자동 병합한다 — Color/Highlight(§1.1.6·§2.16)가 인라인 `style`을 붙이는 것과 같은 메커니즘이라 이미 검증된 경로다. globals.css 전수 확인 결과 `.detail-content`/`.detail-content p`/`h1~h3.blk-heading`(§4.3.1) 어디에도 `text-align`을 강제하는 규칙이 없어(다른 `text-align` 선언은 전부 버튼·표 셀 등 무관 컴포넌트) 인라인 style이 항상 그대로 적용된다. 목록 항목(`ul.blk-task li > div`)·콜아웃(`.blk-callout > *`)·토글(`.blk-toggle__content`)의 flex 자식도 폭을 그대로 차지해 정렬이 동일하게 보인다. 이 태스크(A2)는 보정 클래스(`.align-*`, `[style*="text-align"]`)를 **추가하지 않았다** — 필요하지 않음을 확인한 것이 산출물이다(YAGNI).
+- **트리거(현재 UI 없음):** A1/A2는 확장 등록·렌더 확인까지다. 상단/플로팅 툴바에 정렬 버튼은 아직 없다 — §2.16 ColorPopover와 같은 사유로 Phase B(미구현)가 트리거를 결선한다. 현재는 확장 기본 키보드 단축키(`Mod-Shift-L` 좌 / `Mod-Shift-E` 중앙 / `Mod-Shift-R` 우 / `Mod-Shift-J` 양쪽)와 `editor.commands.setTextAlign(...)` 프로그래밍 호출로만 정렬을 바꿀 수 있다.
+- **활성 상태 조회:** `useFormatState`(§2.10 소비)의 `align` 필드가 `["left","center","right"]` 중 활성 값을 반환(`justify` 미포함 — 버튼 UI가 아직 없어 Phase B에서 필요 시 확장). 문서 없는 경우 기본 `"left"`.
+- **projection 영향 없음:** `textAlign`은 시각 attrs일 뿐 텍스트 내용이 아니므로 `docToText`/`docToPreview`(§5.10) 불변식에 영향을 주지 않는다.
+- 잠그는 테스트: `__tests__/editor-nodes.test.ts`("노드 등록(blocks.ts 계약)" — `setTextAlign` 커맨드로 `isActive({ textAlign: "center" })` 확인).
+
 ---
 
 ## 6. 콘텐츠 / 카피 인벤토리 (Content)
