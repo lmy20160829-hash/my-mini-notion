@@ -849,8 +849,13 @@ React 컴포넌트가 없는 인라인 프리미티브. 화면 코드에서 클�
 - **삽입:** `insertTable({ rows: 3, cols: 3, withHeaderRow: true })`(`lib/editor/insert.ts`) — 항상 3×3, 헤더 행 포함으로 시작.
 - **셀 콘텐츠 제약:** 헤더·일반 셀 모두 `content: "(paragraph | bulletList | orderedList | taskList)+"`(`CELL_CONTENT`, `table-nodes.ts`로 export) — 표 중첩·콜아웃·토글·이미지 등 다른 블록 삽입 금지.
 - **해부(HTMLAttributes 클래스):**
-  - `<table class="tbl">` — `Table.configure({ resizable: true, HTMLAttributes: { class: "tbl" } })`.
+  - `<table class="tbl">` — `Table.configure({ resizable: true, View: TableViewWithAttributes, HTMLAttributes: { class: "tbl" } })`.
   - `<th class="tbl-th">` / `<td class="tbl-td">` — 각각 `TableHeader`/`TableCell` 확장에 부여. `TableRow`는 클래스 없는 네이티브 `<tr>`.
+- **렌더 경로가 둘이라는 점 — `.tbl` 클래스는 양쪽에 모두 보장해야 한다** (2026-07-27 격자 실종 버그의 교훈):
+  - **직렬화 경로**(`getHTML()` → DB 저장본 → 상세 화면 표시)는 `renderHTML`을 타고 `HTMLAttributes`가 그대로 붙는다.
+  - **화면 렌더 경로**(에디터에 실제로 그려지는 DOM)는 `resizable: true`일 때 nodeView(`TableView`)를 탄다. 이때 Tiptap의 `addNodeView()`는 null을 반환하고 prosemirror-tables의 `columnResizing`이 `new View(node, cellMinWidth, view)`로 nodeView를 만드는데 — **HTMLAttributes(4번째 인자)를 넘기지 않아** `class="tbl"`이 라이브 DOM에서 유실된다. 그러면 `.tbl`에 걸린 격자 border·헤더 배경·셀 최소 크기가 에디터에서 전부 죽는다(저장본만 정상이라 `getHTML()` 단언 테스트로는 안 잡힘).
+  - 그래서 `table-nodes.ts`가 `TableView`를 상속한 `TableViewWithAttributes`로 `{ class: "tbl" }`을 주입한다. 라이브 `<table>`은 `<div class="tableWrapper">`로 감싸인 채 `class="tbl"`을 갖는다.
+  - **회귀 방어:** `__tests__/editor-table-render.test.ts`가 `editor.view.dom`(직렬화가 아닌 실제 렌더 DOM)에 globals.css의 표 규칙을 주입해 `getComputedStyle`로 border `1px solid --border-default`·헤더 bg `--surface-subtle`·`height 34px`/`min-width 48px`가 실제로 **계산되는지** 단언한다.
 - **스타일:** `.tbl` = `border-collapse: collapse`, `table-layout: fixed`, `width: 100%`, `margin: 12px 0`, `overflow: hidden`. 셀 공통(`td, th`) = `border: 1px solid --border-default`, `padding: 6px 10px`, `height: 34px`, `min-width: 48px`(빈 셀도 격자가 또렷하게 보이는 최소 크기), `vertical-align: top`, `position: relative`(리사이즈 핸들·선택 오버레이 좌표 기준). 헤더 `th` = bg `--surface-subtle`, `font-weight: 600`, `text-align: left`.
 - **셀 선택 오버레이 `.selectedCell`** (ProseMirror 표 플러그인이 붙이는 클래스, 직접 정의 아님): `::after` — `position: absolute; inset: 0; background: --accent-soft; mix-blend-mode: multiply`(밑에 텍스트가 비치도록 곱셈 블렌드), `pointer-events: none`.
 - **열 리사이즈 핸들 `.column-resize-handle`** (플러그인 제공 클래스): 셀 우측 경계에 `position: absolute; right: -2px; top/bottom: 0; width: 4px; background: --accent; cursor: col-resize`.
