@@ -16,6 +16,18 @@ E2E 스모크를 서브에이전트 주도로 **Task 1~7까지 완료**했다. �
 
 로컬과 origin이 같은 지점이다. 워킹트리 clean.
 
+### CI 상태 — 초록 (혼동 주의)
+
+마감 커밋 `4cfc043`의 CI 실행 **`30444831850` = success**(1m13s). 잡 `verify`의 모든 스텝
+(Checkout · Setup Node · Install · Test(vitest) · Build)이 success다. 이 브랜치의 실행 2건
+(`30442819621`, `30444831850`) 모두 초록이다.
+
+> **`gh run list`에 보이는 failure 3건은 이 작업과 무관하다.** 전부 워크플로 이름이
+> **`Deploy to GitHub Pages`**이고 날짜가 2026-07-23·07-27이다. static export를 제거한 뒤
+> `cp out/index.html`에서 상시 실패하던 GH Pages 잔재이며, `09624d6`에서 **워크플로 파일을
+> 삭제해 이미 해소**했다(배포는 Vercel Git 통합이 담당). 목록에 과거 기록만 남아 있는 것이니
+> 이걸 보고 "CI 실패"로 판단하지 말 것. 워크플로 이름이 `CI`인 것만 현재 게이트다.
+
 ### `006-e2e-smoke` 커밋 (오래된 순)
 
 | 커밋 | 내용 | Task |
