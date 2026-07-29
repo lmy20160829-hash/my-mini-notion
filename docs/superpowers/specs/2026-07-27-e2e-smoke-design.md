@@ -165,7 +165,7 @@ pageExtensions: ["tsx", "ts", "jsx", "js", ...(e2e ? ["e2e.tsx"] : [])],
 | # | 테스트 | 조작 | 단언 | jsdom이 못 잡는 이유 |
 |---|---|---|---|---|
 | 1 | **표 격자** | 상단 툴바 `[aria-label="표 삽입"]` 클릭 | ① `.detail-content table`에 **`tbl` 클래스 존재**(회귀 지점 직격) ② 첫 `td` computed: `border-top` = `1px` / `solid` / `rgb(226, 227, 229)` ③ `td` 높이 ≥ 34px ④ `th` `background-color` = `rgb(247, 248, 249)` | `var()` 실해석 불가 |
-| 2 | **툴바 한 줄** | 없음(초기 렌더) | `.top-toolbar` 내 모든 `button`의 `boundingBox().y` 최대−최소 ≤ 임계, 툴바 자체 높이 ≤ 임계 | flex 레이아웃 계산 불가 |
+| 2 | **툴바 두 줄 이하** | 없음(초기 렌더) | `.top-toolbar` 내 모든 `button`의 `boundingBox().y` 최대−최소 ≤ 임계, 툴바 자체 높이 ≤ 임계 | flex 레이아웃 계산 불가 |
 | 3 | **핸들 메뉴** | 본문에 텍스트 입력 → 블록 hover → `.handle-btn` 클릭 → `.handle-menu[role="menu"]` 등장 → "복제" 클릭 | 메뉴 등장, 블록 수 +1, **pageerror 0** | 실제 이벤트·플러그인 상호작용 |
 | 4 | **색 팝오버** | 텍스트 입력·전체 선택 → `[aria-label="글자색"]` 클릭 → `.clr-pop` 등장 → `[aria-label="빨강"]` 클릭 | ① 팝오버 boundingBox가 뷰포트 안 ② 적용 후 해당 텍스트 computed `color` = `rgb(229, 72, 77)` ③ 닫힘(`.clr-pop` 부재 + 버튼 `aria-expanded="false"`) | floating-ui 실좌표 |
 | 5 | **표 플로팅 툴바** | 표 삽입 → 셀 클릭 → `.tbl-toolbar[role="toolbar"]` 등장 → `[aria-label="행 아래 삽입"]` 클릭 | ① 툴바 boundingBox가 뷰포트 안 ② `tr` 수 +1 | 동일 |
