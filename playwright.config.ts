@@ -12,7 +12,12 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: 0,
   workers: process.env.CI ? 1 : undefined,
-  reporter: process.env.CI ? "line" : "list",
+  // line은 스트리밍 로그를 CI 콘솔에 남기려고 고른 것(그대로 유지). 다만 line 단독으로는
+  // playwright-report/ 를 만들지 않아, 실패 시 ci.yml의 업로드 스텝이 아무것도 못 올린다.
+  // html을 병행해 실제로 디렉터리가 생기게 하고, open: "never"로 러너에서 브라우저를
+  // 띄우려는 시도를 막는다. html 리포트는 트레이스(retain-on-failure)까지 품으므로
+  // 아티팩트 하나로 진단이 끝난다.
+  reporter: process.env.CI ? [["line"], ["html", { open: "never" }]] : "list",
   use: {
     baseURL: "http://localhost:3000",
     trace: "retain-on-failure",
