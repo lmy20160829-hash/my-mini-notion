@@ -195,7 +195,7 @@ pageExtensions: ["tsx", "ts", "jsx", "js", ...(e2e ? ["e2e.tsx"] : [])],
 > 30px(전 버튼 동일), 툴바 높이 79px.
 >
 > **오늘의 기준선은 "한 줄"이 아니라 "두 줄"이다 — 브리프의 "정상 상태는 spread ~0"
-> 가정은 실측과 어긋난다.** `.top-toolbar`는 `flex-wrap: wrap`이고(globals.css:1099),
+> 가정은 실측과 어긋난다.** `.top-toolbar`는 `flex-wrap: wrap`이고(globals.css:1100),
 > 담긴 `.detail-page`는 `max-width: 760px` + 좌우 padding 28px → 내부 704px
 > (globals.css:472) — 프로덕션 글 상세(`PostDetailClient.tsx`)도 같은 클래스를 쓰므로
 > 하니스만의 인공물이 아니라 **현재 프로덕션 레이아웃 그대로**다. 버튼 17개 + select 2개

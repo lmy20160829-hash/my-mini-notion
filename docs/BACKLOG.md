@@ -31,7 +31,7 @@
 **실측(2026-07-29, `/e2e-harness/editor`, 1280×720):** 상단 툴바 버튼 17개(스타일·글자
 크기 select 2개, 구분선 5개는 별도)가 `.detail-page`의 내부 폭 704px(`max-width: 760px`
 − 좌우 padding 28px×2, globals.css:472)에 다 들어가지 않는다. `.top-toolbar`가
-`flex-wrap: wrap`이라(globals.css:1099) 실행취소·다시 실행 2개가 항상 둘째 줄로
+`flex-wrap: wrap`이라(globals.css:1100) 실행취소·다시 실행 2개가 항상 둘째 줄로
 밀려난다(버튼 15개 y=467.5, 2개 y=502.5, 툴바 높이 79px). `.detail-page`는 하니스
 전용이 아니라 프로덕션 글 상세(`PostDetailClient.tsx`)와 동일 클래스라 **지금 실사용
 화면에서도 그대로 재현되는 상태**다.
