@@ -130,6 +130,18 @@ pageExtensions: ["tsx", "ts", "jsx", "js", ...(e2e ? ["e2e.tsx"] : [])],
 | 빌드 타임 | `pageExtensions`에서 `e2e.tsx` 제외 | 플래그 없는 빌드(= Vercel 프로덕션·CI)에 **파일 자체가 안 들어감** |
 | 런타임 | `process.env.NEXT_PUBLIC_E2E !== "1"`이면 `notFound()` | 플래그를 켠 채 만든 빌드가 어쩌다 배포되는 경우 |
 
+> **정정(2026-07-30, 최종 브랜치 리뷰):** 위 표의 "런타임" 행이 막는다고 적은 상황 —
+> "플래그를 켠 채 만든 빌드가 어쩌다 배포되는 경우" — 은 실제로는 이 겹으로 못 막는다.
+> `NEXT_PUBLIC_*`는 Next.js가 빌드 타임에 인라인하므로(값이 바뀌어도 반응하지 않는다 —
+> `node_modules/next/dist/docs/01-app/02-guides/environment-variables.md:164-166`), 플래그를
+> 켠 빌드에서는 `process.env.NEXT_PUBLIC_E2E !== "1"`이 `"1" !== "1"`로 컴파일 시점에
+> 굳어 죽은 코드가 된다 — 빌드 타임 겹과 같은 변수에 의존해 사실상 독립된 겹이 아니었다.
+> 실측: `grep -rn --include="*.js" -o "process\.env\.NEXT_PUBLIC_[A-Z_]*" .next/server
+> .next/static` → 0건(인라인됨), 반면 인라인된 *값*은 청크에 그대로 남는다. 실제 수정은
+> `app/e2e-harness/editor/page.e2e.tsx`에 이 플래그와 무관한 `NODE_ENV === "production"`
+> 검사를 추가하는 것이다 — 이게 "플래그를 켠 빌드가 배포되는 사고"를 실제로 막는 두
+> 번째 겹이다. 이 문서의 표·본문은 원래 기록 그대로 두고 이 각주로만 바로잡는다.
+
 ### 4.3 검증 2겹
 
 - **(a) 유닛** — 플래그 없을 때 `notFound()`가 호출되는지. `next/navigation`의 `notFound`를

@@ -26,7 +26,9 @@ export default defineConfig({
   webServer: {
     command: "npm run dev",
     url: "http://localhost:3000",
-    // 하니스 라우트는 이 플래그가 "1"일 때만 존재한다(빌드/런타임 2겹 게이트).
+    // 하니스 라우트는 이 플래그가 "1"일 때만 존재한다(빌드 타임 게이트 —
+    // next.config.ts의 pageExtensions). dev 서버는 NODE_ENV가 항상 "development"라
+    // page.e2e.tsx의 별도 production 검사에는 걸리지 않는다.
     env: { NEXT_PUBLIC_E2E: "1" },
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
